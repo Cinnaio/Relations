@@ -1,0 +1,79 @@
+title: "你的关系列表 - 第 <page> 页"
+size: 54
+
+relations:
+  # 内圈区域 (54格的大箱子，除去外圈)
+  # Row 1: 10-16
+  # Row 2: 19-25
+  # Row 3: 28-34
+  # Row 4: 37-43
+  slots: [10,11,12,13,14,15,16, 19,20,21,22,23,24,25, 28,29,30,31,32,33,34, 37,38,39,40,41,42,43]
+  line-break: true
+  
+  # 默认类型标题
+  header-item:
+    material: BOOK
+    name: "<display>"
+    lore:
+      - "<color:#A0A0A0>当前: <color:#6EC6FF><current><color:#5A5A5A>/<color:#AEEFFF><max>"
+      
+  # 默认成员头像
+  member-item:
+    material: PLAYER_HEAD
+    name: "<display>"
+    lore:
+      - "<color:#A0A0A0>对象: <color:#FFD866><player>"
+      - "<color:#A0A0A0>亲密度: <color:#6BFF95><affinity>"
+      - "<color:#A0A0A0>日期: <color:#E6E6E6><date>"
+
+  # 不同类型的特殊配置 (覆盖默认)
+  types:
+    marriage:
+      header-item:
+        material: NETHER_STAR
+        name: "<display> <color:#FF8FB1>(❤)"
+        lore:
+          - "<color:#A0A0A0>当前: <color:#6EC6FF><current><color:#5A5A5A>/<color:#AEEFFF><max>"
+    brother:
+      header-item:
+        material: IRON_SWORD
+        name: "<display>"
+        lore:
+          - "<color:#A0A0A0>当前: <color:#6EC6FF><current><color:#5A5A5A>/<color:#AEEFFF><max>"
+    sister:
+      header-item:
+        material: CAKE
+        name: "<display>"
+        lore:
+          - "<color:#A0A0A0>当前: <color:#6EC6FF><current><color:#5A5A5A>/<color:#AEEFFF><max>"
+    best_friend:
+      header-item:
+        material: DIAMOND
+        name: "<display>"
+        lore:
+          - "<color:#A0A0A0>当前: <color:#6EC6FF><current><color:#5A5A5A>/<color:#AEEFFF><max>"
+    mentor:
+      header-item:
+        material: EXPERIENCE_BOTTLE
+        name: "<display>"
+        lore:
+          - "<color:#A0A0A0>当前: <color:#6EC6FF><current><color:#5A5A5A>/<color:#AEEFFF><max>"
+
+# 静态物品 / 按钮
+items:
+  border:
+    material: GRAY_STAINED_GLASS_PANE
+    name: " "
+    slots: [0,1,2,3,4,5,6,7,8, 9,17, 18,26, 27,35, 36,44, 45,46,47,48,49,50,51,52,53]
+  
+  previous-page:
+    material: ARROW
+    name: "<color:#FFD479>上一页</color>"
+    slots: [48]
+    action: "previous_page" # 用于识别点击动作
+  
+  next-page:
+    material: ARROW
+    name: "<color:#FFD479>下一页</color>"
+    slots: [50]
+    action: "next_page"

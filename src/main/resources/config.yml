@@ -1,0 +1,130 @@
+database:
+  # 选项: SQLITE, MYSQL
+  type: SQLITE
+  host: localhost
+  port: 3306
+  database: relations
+  username: root
+  password: ""
+  ssl: false
+  pool-size: 10
+
+relations:
+  marriage:
+    display: "<color:#FF8FB1><bold>伴侣</bold></color>"
+    max: 1
+    # 婚姻专属功能
+    features:
+      home: true
+      gift: true
+      tp: true
+      kiss: true
+    # 每日亲密度上限 (默认)
+    daily-affinity-limit: 1000
+  brother:
+    display: "<color:#6EC6FF><bold>兄弟</bold></color>"
+    max: 5
+    daily-affinity-limit: 1000
+  best_friend:
+    display: "<color:#FFD479><bold>挚友</bold></color>"
+    max: 10
+    daily-affinity-limit: 1000
+  sister:
+    display: "<color:#C39BFF><bold>闺蜜</bold></color>"
+    max: 5
+    daily-affinity-limit: 1000
+  mentor:
+    display: "<color:#AEEFFF><bold>导师</bold></color>"
+    max: 1
+    daily-affinity-limit: 1000
+
+debug: false
+
+messages:
+  prefix: "<color:#FFD479><bold>[关系]</bold></color> "
+  no-permission: "<color:#FF6B6B>你没有权限执行此操作。</color>"
+  player-only: "<color:#FF6B6B>该指令仅限玩家使用。</color>"
+  player-not-found: "<color:#FF6B6B>找不到该玩家。</color>"
+  reload-success: "<color:#6BFF95>配置文件重载成功。</color>"
+  gender-set: "<color:#6BFF95>你的性别已设置为 <color:#FFD866><gender></color>。</color>"
+  unknown-command: "<color:#FF6B6B>未知指令。</color>"
+  invalid-gender: "<color:#FF6B6B>性别无效。请使用 male/female/other。</color>"
+  invalid-relation-type: "<color:#FF6B6B>无效的关系类型。</color>"
+  not-married: "<color:#FF6B6B>你还没有结婚！</color>"
+  item-saved: "<color:#6BFF95>物品已保存为 <color:#FFD866><type></color> 的亲密度道具！(增加: <color:#FFD866><amount></color>)</color>"
+  must-hold-item: "<color:#FF6B6B>你必须手持物品才能赠送。</color>"
+  partner-not-online: "<color:#FF6B6B>你的伴侣不在线。</color>"
+  partner-inventory-full: "<color:#FF6B6B>你伴侣的背包已满。</color>"
+  no-marriages-found: "<color:#FFB347>暂无结婚记录。</color>"
+  error-fetching-list: "<color:#FF6B6B>获取列表时出错。</color>"
+  no-relation-found: "<color:#FF6B6B>未找到这两个玩家之间的关系。</color>"
+  no-relations-found: "<color:#FFB347>暂无该类型的关系记录。</color>"
+  
+  # 新增提取的消息
+  invalid-amount: "<color:#FF6B6B>无效的数量。</color>"
+  target-limit-reached: "<color:#FF6B6B>对方已达到该关系类型的上限。</color>"
+  sender-limit-reached: "<color:#FF6B6B>你已达到该关系类型的上限。</color>"
+  multiple-relations: "<color:#FF6B6B>找到多个 <color:#FFD866><type></color> 关系，请指定目标玩家。</color>"
+  list-header: "<color:#FFD479>--- 你的关系列表 ---</color>"
+  marriage-list-header: "<color:#FFD479>--- 已婚伴侣 (前50) ---</color>"
+  marriage-entry: "<color:#E6E6E6><p1> <color:#FF8FB1>❤</color> <p2> <color:#A0A0A0>(<date>)</color></color>"
+  
+  top-header: "<color:#FFD479>--- <type> 亲密度排行榜 ---</color>"
+  top-entry: "<color:#A0A0A0>#<rank> <color:#E6E6E6><p1> & <p2> <color:#5A5A5A>- <color:#6BFF95><affinity>"
+  
+  gui:
+    title: "你的关系列表"
+    partner: "<color:#A0A0A0>对象: <color:#FFD866>"
+    affinity: "<color:#A0A0A0>亲密度: <color:#6BFF95>"
+    date: "<color:#A0A0A0>日期: <color:#E6E6E6>"
+    type-limit: "<color:#A0A0A0>当前: <color:#6EC6FF><current><color:#5A5A5A>/<color:#AEEFFF><max>"
+    
+  help:
+    header: "<color:#5A5A5A>--- <color:#FFD479>关系插件帮助</color> ---</color>"
+    gui: "<color:#6EC6FF>/rel gui <color:#5A5A5A>- <color:#A0A0A0>打开关系菜单"
+    gender: "<color:#6EC6FF>/rel gender <male|female|other> <color:#5A5A5A>- <color:#A0A0A0>设置性别"
+    top: "<color:#6EC6FF>/rel top <类型> <color:#5A5A5A>- <color:#A0A0A0>查看亲密度排行榜"
+    request: "<color:#6EC6FF>/rel request <玩家> <类型> <color:#5A5A5A>- <color:#A0A0A0>发送关系请求"
+    accept: "<color:#6EC6FF>/rel accept <玩家> <color:#5A5A5A>- <color:#A0A0A0>接受请求"
+    deny: "<color:#6EC6FF>/rel deny <玩家> <color:#5A5A5A>- <color:#A0A0A0>拒绝请求"
+    remove: "<color:#6EC6FF>/rel remove <玩家> <color:#5A5A5A>- <color:#A0A0A0>解除关系"
+    marry: "<color:#6EC6FF>/rel marry <sethome|home|gift|tp> <color:#5A5A5A>- <color:#A0A0A0>婚姻专属指令"
+    save: "<color:#6EC6FF>/rel save <类型> [数值] <color:#5A5A5A>- <color:#A0A0A0>保存亲密度物品(管理员)"
+  
+  usage:
+    save: "<color:#FF6B6B>用法: /relations save <类型> [数值]"
+    request: "<color:#FF6B6B>用法: /relations request <玩家> <类型>"
+    accept: "<color:#FF6B6B>用法: /relations accept <玩家>"
+    deny: "<color:#FF6B6B>用法: /relations deny <玩家>"
+    remove: "<color:#FF6B6B>用法: /relations remove <玩家>"
+    top: "<color:#FF6B6B>用法: /relations top <类型>"
+    marry: "<color:#FF6B6B>用法: /relations marry <sethome|home|gift|tp|list>"
+    gender: "<color:#FF6B6B>用法: /relations gender <male|female|other>"
+    admin-affinity: "<color:#FF6B6B>用法: /relations admin affinity <set/add/remove> <p1> [p2] <类型> <数值>"
+
+  relation:
+    affinity-item-used: "<color:#6BFF95>你使用了亲密度物品，与 <color:#FFD866><target></color> 的亲密度增加了 <color:#FFD866><amount></color>！</color>"
+    affinity-item-received: "<color:#6BFF95><color:#FFD866><player></color> 对你使用了亲密度物品，你们的亲密度增加了 <color:#FFD866><amount></color>！</color>"
+    cannot-relate-self: "<color:#FF6B6B>你不能与自己建立关系。</color>"
+    request-sent: "<color:#6BFF95>已向 <color:#FFD866><target></color> 发送 <color:#6EC6FF>关系请求</color>。</color>"
+    request-received: "<color:#6BFF95><color:#FFD866><player></color> 想要成为你的 <relation>。<newline> <click:run_command:'/rel accept <player>'><hover:show_text:'<color:#6BFF95>点击接受请求</color>'><color:#6BFF95><bold>[接受]</bold></color></hover></click>  <click:run_command:'/rel deny <player>'><hover:show_text:'<color:#FF6B6B>点击拒绝请求</color>'><color:#FF6B6B><bold>[拒绝]</bold></color></hover></click></color>"
+    request-accepted: "<color:#6BFF95>你现在与 <color:#FFD866><target></color> 建立了 <relation> 关系！</color>"
+    request-denied: "<color:#FF6B6B>你拒绝了来自 <color:#FFD866><target></color> 的请求。</color>"
+    request-denied-target: "<color:#FF6B6B><color:#FFD866><target></color> 拒绝了你的请求。</color>"
+    already-related: "<color:#FF6B6B>你已经与该玩家建立关系了。</color>"
+    limit-reached: "<color:#FF6B6B>你已达到该关系类型的上限。</color>"
+    removed: "<color:#FF6B6B>已解除与 <color:#FFD866><target></color> 的关系。</color>"
+    affinity-update: "<color:#6BFF95>与 <color:#FFD866><target></color> 的亲密度已更新为 <color:#FFD866><amount></color>。</color>"
+    # 新增提取的消息
+    item-type-mismatch: "<color:#FF6B6B>此物品仅适用于 <color:#FFD866><type></color> 关系，而你们的关系是 <color:#FFD866><actual></color>。</color>"
+    daily-limit-reached: "<color:#FF6B6B>今日亲密度已达上限，无法继续增加。</color>"
+    list-entry: "<display> <color:#A0A0A0>与 <color:#FFD866><partner> <color:#A0A0A0>(亲密度: <color:#FFD866><affinity></color>)</color></color>"
+    
+  marriage:
+    home-set: "<color:#6BFF95>已设置 <color:#FF8FB1>婚姻家园</color>！</color>"
+    home-teleport: "<color:#6BFF95>正在传送至 <color:#FF8FB1>婚姻家园</color>...</color>"
+    gift-sent: "<color:#6BFF95>已将礼物送给 <color:#FFD866><target></color>！</color>"
+    gift-received: "<color:#6BFF95>你收到了来自 <color:#FFD866><target></color> 的礼物！</color>"
+    teleporting: "<color:#6BFF95>正在传送至伴侣身边...</color>"
+    kiss: "<color:#FF8FB1>你亲吻了 <target>！ mu~a!</color>"
+    kissed: "<color:#FF8FB1><target> 亲吻了你！ mu~a!</color>"

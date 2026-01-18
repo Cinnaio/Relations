@@ -1,0 +1,19 @@
+name: Relations
+version: '1.0-SNAPSHOT'
+main: com.github.cinnaio.relations.Relations
+api-version: '1.21'
+authors: [Cinnaio]
+depend: [PlaceholderAPI]
+softdepend: [PlaceholderAPI]
+folia-supported: true
+
+commands:
+  relations:
+    description: Main command for Relations plugin
+    usage: /relations
+    aliases: [rel]
+
+permissions:
+  relations.admin:
+    description: Admin permission for relations
+    default: op

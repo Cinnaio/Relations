@@ -1,0 +1,11 @@
+affinity-items:
+  marriage:
+    amount: 10
+  brother:
+    amount: 5
+  best_friend:
+    amount: 5
+  sister:
+    amount: 5
+  mentor:
+    amount: 10
