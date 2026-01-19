@@ -74,6 +74,17 @@ public class RelationManager {
         return relationDAO.getTopRelations(type, limit);
     }
 
+    public void createRelationForce(UUID p1, UUID p2, String type, int affinity) {
+        Relation relation = new Relation(p1, p2, type, affinity, 0, new Timestamp(System.currentTimeMillis()), new Timestamp(System.currentTimeMillis()));
+        try {
+            relationDAO.createRelation(relation);
+            updateCache(p1);
+            updateCache(p2);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void sendRequest(Player sender, Player target, String type) {
         if (sender.getUniqueId().equals(target.getUniqueId())) {
              sender.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("relation.cannot-relate-self")));
@@ -428,11 +439,16 @@ public class RelationManager {
     public void setHome(Player player) {
         Relation marriage = getMarriage(player.getUniqueId());
         if (marriage == null) return;
-        marriage.setHome(player.getLocation());
+        
+        org.bukkit.Location loc = player.getLocation();
+        marriage.setHome(loc);
+        
         SchedulerUtils.runAsync(plugin, () -> {
             try {
                 relationDAO.updateHome(marriage);
-                player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("marriage.home-set")));
+                SchedulerUtils.runTask(plugin, player, () -> {
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("marriage.home-set")));
+                });
             } catch (SQLException e) {
                 e.printStackTrace();
             }
@@ -441,9 +457,14 @@ public class RelationManager {
     
     public void teleportHome(Player player) {
         Relation marriage = getMarriage(player.getUniqueId());
-        if (marriage == null || !marriage.hasHome()) return;
+        if (marriage == null || !marriage.hasHome()) {
+             String msg = plugin.getConfigManager().getMessage("marriage.no-home-set");
+             if (msg == null || msg.isEmpty()) msg = "<color:#FF6B6B>你还没有设置婚姻家园！请使用 /rel marry sethome 设置。</color>";
+             player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
+             return;
+        }
         player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("marriage.home-teleport")));
-        player.teleport(marriage.getHome());
+        SchedulerUtils.teleport(player, marriage.getHome());
     }
     
     public Relation getMarriage(UUID player) {

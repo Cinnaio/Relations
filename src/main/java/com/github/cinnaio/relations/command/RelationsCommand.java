@@ -185,6 +185,13 @@ public class RelationsCommand implements CommandExecutor, TabCompleter {
                  }
                  handleAdmin(player, args);
                  break;
+            case "debug":
+                if (!player.hasPermission("relations.admin")) {
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-permission")));
+                    return true;
+                }
+                handleDebug(player, args);
+                break;
             default:
                 player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("unknown-command")));
         }
@@ -285,31 +292,38 @@ public class RelationsCommand implements CommandExecutor, TabCompleter {
             return;
         }
 
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+        SchedulerUtils.runAsync(plugin, () -> {
             try {
                 List<Relation> topRelations = plugin.getRelationManager().getTopRelations(type, 10);
                 if (topRelations.isEmpty()) {
-                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-relations-found")));
+                    SchedulerUtils.runTask(plugin, player, () -> {
+                        player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-relations-found")));
+                    });
                     return;
                 }
-                player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("top-header").replace("<type>", plugin.getConfigManager().getRelationDisplay(type))));
-                int rank = 1;
-                for (Relation r : topRelations) {
-                    String p1Name = Bukkit.getOfflinePlayer(r.getPlayer1()).getName();
-                    String p2Name = Bukkit.getOfflinePlayer(r.getPlayer2()).getName();
-                    if (p1Name == null) p1Name = "Unknown";
-                    if (p2Name == null) p2Name = "Unknown";
-
-                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("top-entry")
-                            .replace("<rank>", String.valueOf(rank))
-                            .replace("<p1>", p1Name)
-                            .replace("<p2>", p2Name)
-                            .replace("<affinity>", String.valueOf(r.getAffinity()))));
-                    rank++;
-                }
+                
+                SchedulerUtils.runTask(plugin, player, () -> {
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("top-header").replace("<type>", plugin.getConfigManager().getRelationDisplay(type))));
+                    int rank = 1;
+                    for (Relation r : topRelations) {
+                        String p1Name = Bukkit.getOfflinePlayer(r.getPlayer1()).getName();
+                        String p2Name = Bukkit.getOfflinePlayer(r.getPlayer2()).getName();
+                        if (p1Name == null) p1Name = "Unknown";
+                        if (p2Name == null) p2Name = "Unknown";
+    
+                        player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("top-entry")
+                                .replace("<rank>", String.valueOf(rank))
+                                .replace("<p1>", p1Name)
+                                .replace("<p2>", p2Name)
+                                .replace("<affinity>", String.valueOf(r.getAffinity()))));
+                        rank++;
+                    }
+                });
             } catch (Exception e) {
                 e.printStackTrace();
-                player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("error-fetching-list")));
+                SchedulerUtils.runTask(plugin, player, () -> {
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("error-fetching-list")));
+                });
             }
         });
     }
@@ -361,8 +375,12 @@ public class RelationsCommand implements CommandExecutor, TabCompleter {
                     player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("partner-not-online")));
                     return;
                 }
-                player.teleport(p);
                 player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("marriage.teleporting")));
+                SchedulerUtils.teleport(player, p.getLocation()).thenAccept(success -> {
+                    if (!success) {
+                         player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("teleport-failed") != null ? plugin.getConfigManager().getMessage("teleport-failed") : "<red>Teleportation failed!"));
+                    }
+                });
                 break;
             case "list":
                 SchedulerUtils.runAsync(plugin, () -> {
@@ -500,6 +518,36 @@ public class RelationsCommand implements CommandExecutor, TabCompleter {
          admin.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("relation.affinity-update")
                  .replace("<target>", p2Name != null ? p2Name : "Unknown")
                  .replace("<amount>", String.valueOf(actualAffinity))));
+    }
+
+    private void handleDebug(Player player, String[] args) {
+        if (args.length < 2) {
+             player.sendMessage(MiniMessage.miniMessage().deserialize("<red>Usage: /relations debug addfake <name> <type> [affinity]"));
+             return;
+        }
+        String sub = args[1].toLowerCase();
+        if (sub.equals("addfake")) {
+            if (args.length < 4) {
+                player.sendMessage(MiniMessage.miniMessage().deserialize("<red>Usage: /relations debug addfake <name> <type> [affinity]"));
+                return;
+            }
+            String name = args[2];
+            String type = args[3];
+            int affinity = 0;
+            if (args.length >= 5) {
+                try {
+                    affinity = Integer.parseInt(args[4]);
+                } catch (NumberFormatException e) {
+                    player.sendMessage(MiniMessage.miniMessage().deserialize("<red>Invalid affinity number."));
+                    return;
+                }
+            }
+            
+            UUID fakeUUID = UUID.randomUUID();
+            com.github.cinnaio.relations.gui.GuiManager.FAKE_NAMES.put(fakeUUID, name);
+            relationManager.createRelationForce(player.getUniqueId(), fakeUUID, type, affinity);
+            player.sendMessage(MiniMessage.miniMessage().deserialize("<green>Added fake relation with " + name + " (" + type + ")"));
+        }
     }
 
     @Override

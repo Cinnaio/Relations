@@ -6,6 +6,7 @@ import com.github.cinnaio.relations.manager.RelationManager;
 import com.github.cinnaio.relations.model.Relation;
 import com.github.cinnaio.relations.gui.RelationsHolder;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -112,10 +113,44 @@ public class RelationListener implements Listener {
             RelationsHolder holder = (RelationsHolder) event.getInventory().getHolder();
             int currentPage = holder.getPage();
             
-            if (action.equalsIgnoreCase("next_page")) {
-                plugin.getGuiManager().openRelationsGui(player, currentPage + 1);
-            } else if (action.equalsIgnoreCase("previous_page")) {
-                plugin.getGuiManager().openRelationsGui(player, currentPage - 1);
+            // Handle multiple actions (separated by ;)
+            String[] actions = action.split(";");
+            for (String act : actions) {
+                act = act.trim();
+                if (act.isEmpty()) continue;
+                
+                if (act.equalsIgnoreCase("next_page")) {
+                    plugin.getGuiManager().openRelationsGui(player, currentPage + 1);
+                } else if (act.equalsIgnoreCase("previous_page")) {
+                    plugin.getGuiManager().openRelationsGui(player, currentPage - 1);
+                } else if (act.equalsIgnoreCase("close")) {
+                    player.closeInventory();
+                } else if (act.toLowerCase().startsWith("sound:")) {
+                    String[] parts = act.split(":");
+                    if (parts.length > 1) {
+                        // Format: sound: NAME-volume-pitch
+                        String soundData = parts[1].trim();
+                        String[] soundParts = soundData.split("-");
+                        String soundName = soundParts[0];
+                        float vol = 1f;
+                        float pitch = 1f;
+                        if (soundParts.length > 1) vol = Float.parseFloat(soundParts[1]);
+                        if (soundParts.length > 2) pitch = Float.parseFloat(soundParts[2]);
+                        
+                        try {
+                            Sound s = Sound.valueOf(soundName.toUpperCase());
+                            player.playSound(player.getLocation(), s, vol, pitch);
+                        } catch (IllegalArgumentException e) {
+                            // Invalid sound
+                        }
+                    }
+                } else if (act.toLowerCase().startsWith("console:")) {
+                    String cmd = act.substring("console:".length()).trim();
+                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd.replace("<player>", player.getName()));
+                } else if (act.toLowerCase().startsWith("player:")) {
+                    String cmd = act.substring("player:".length()).trim();
+                    player.performCommand(cmd);
+                }
             }
         }
     }

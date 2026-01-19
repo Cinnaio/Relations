@@ -15,12 +15,14 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.plugin.Plugin;
 
 import java.util.*;
 
 public class GuiManager {
 
     private final Relations plugin;
+    public static final Map<UUID, String> FAKE_NAMES = new java.util.concurrent.ConcurrentHashMap<>();
 
     public GuiManager(Relations plugin) {
         this.plugin = plugin;
@@ -43,40 +45,78 @@ public class GuiManager {
         
         Inventory inv = Bukkit.createInventory(new RelationsHolder(page), size, MiniMessage.miniMessage().deserialize(title));
 
-        // Load valid slots for relations
+        // Layout Support
         List<Integer> relationSlots = new ArrayList<>();
-        ConfigurationSection relConfig = menuConfig.getConfigurationSection("relations");
-        if (relConfig != null) {
-            List<Integer> configSlots = relConfig.getIntegerList("slots");
-            if (!configSlots.isEmpty()) {
-                relationSlots.addAll(configSlots);
-            } else {
-                // Fallback to start/end logic if slots not provided
-                int start = relConfig.getInt("start-slot", 0);
-                int end = relConfig.getInt("end-slot", size - 1);
-                for (int i = start; i <= end; i++) {
-                    relationSlots.add(i);
+        Map<Integer, ItemStack> staticItems = new HashMap<>();
+        
+        if (menuConfig.contains("Layout")) {
+            parseLayout(menuConfig, size, relationSlots, staticItems, player);
+        } else {
+            // Legacy/Default Mode
+            // Load valid slots for relations
+            ConfigurationSection relConfig = menuConfig.getConfigurationSection("relations");
+            if (relConfig != null) {
+                List<Integer> configSlots = relConfig.getIntegerList("slots");
+                if (!configSlots.isEmpty()) {
+                    relationSlots.addAll(configSlots);
+                } else {
+                    int start = relConfig.getInt("start-slot", 0);
+                    int end = relConfig.getInt("end-slot", size - 1);
+                    for (int i = start; i <= end; i++) {
+                        relationSlots.add(i);
+                    }
+                }
+            }
+            
+            // Static Items
+            ConfigurationSection itemsSection = menuConfig.getConfigurationSection("items");
+            if (itemsSection != null) {
+                for (String key : itemsSection.getKeys(false)) {
+                    ConfigurationSection itemSec = itemsSection.getConfigurationSection(key);
+                    if (itemSec == null) continue;
+                    
+                    ItemStack item = buildItem(itemSec, null, null);
+                    // Add PDC action if present
+                    if (itemSec.contains("action")) {
+                        String action = itemSec.getString("action");
+                        org.bukkit.inventory.meta.ItemMeta meta = item.getItemMeta();
+                        meta.getPersistentDataContainer().set(new NamespacedKey(plugin, "action"), PersistentDataType.STRING, action);
+                        item.setItemMeta(meta);
+                    }
+                    // Support new actions format in legacy items too if needed?
+                    // For now keeping legacy behavior strict for legacy config.
+                    
+                    List<Integer> slots = itemSec.getIntegerList("slots");
+                    for (int slot : slots) {
+                        if (slot >= 0 && slot < size) {
+                            staticItems.put(slot, item);
+                        }
+                    }
                 }
             }
         }
+
+        // Apply Static Items
+        for (Map.Entry<Integer, ItemStack> entry : staticItems.entrySet()) {
+            inv.setItem(entry.getKey(), entry.getValue());
+        }
         
+        // Render Relations
+        ConfigurationSection relConfig = menuConfig.getConfigurationSection("relations");
         boolean lineBreak = relConfig != null && relConfig.getBoolean("line-break", true);
         int itemsPerPage = relationSlots.size();
 
         // 1. Prepare items to render (Virtual List)
+        // ... (Existing logic for relations rendering)
         List<ItemStack> virtualItems = new ArrayList<>();
         List<String> types = plugin.getConfigManager().getRelationTypes().stream().toList();
         List<Relation> relations = plugin.getRelationManager().getRelations(player.getUniqueId());
-
-        // We need to simulate placement to handle line breaks properly
-        // Actually, if we use a virtual list, line-break effectively inserts empty items until next row?
-        // Let's build a Map<Integer, ItemStack> where key is the index in relationSlots.
         
         Map<Integer, ItemStack> pageItems = new HashMap<>();
-        int globalIndex = 0; // Index in relationSlots (across pages)
-
+        int globalIndex = 0; 
+        
         for (String type : types) {
-            // Stats
+             // ... (Existing logic stats)
             int current = 0;
             List<Relation> typeRelations = new ArrayList<>();
             for (Relation r : relations) {
@@ -94,7 +134,6 @@ public class GuiManager {
                 placeholders.put("<current>", String.valueOf(current));
                 placeholders.put("<max>", String.valueOf(max));
                 
-                // Check for type-specific override
                 ConfigurationSection headerSection = relConfig.getConfigurationSection("header-item");
                 if (relConfig.contains("types." + type + ".header-item")) {
                     headerSection = relConfig.getConfigurationSection("types." + type + ".header-item");
@@ -107,7 +146,6 @@ public class GuiManager {
             // Members
             if (relConfig != null && relConfig.contains("member-item")) {
                 ConfigurationSection memberSection = relConfig.getConfigurationSection("member-item");
-                // Check override (optional)
                 if (relConfig.contains("types." + type + ".member-item")) {
                      memberSection = relConfig.getConfigurationSection("types." + type + ".member-item");
                 }
@@ -119,7 +157,11 @@ public class GuiManager {
                     Map<String, String> placeholders = new HashMap<>();
                     String rDisplay = plugin.getConfigManager().getRelationDisplay(r.getType());
                     placeholders.put("<display>", rDisplay);
-                    placeholders.put("<player>", partner.getName() != null ? partner.getName() : "Unknown");
+                    
+                    String partnerName = partner.getName();
+                    if (partnerName == null) partnerName = FAKE_NAMES.get(partnerId);
+                    placeholders.put("<player>", partnerName != null ? partnerName : "Unknown");
+                    
                     placeholders.put("<affinity>", String.valueOf(r.getAffinity()));
                     placeholders.put("<date>", r.getCreatedAt().toString());
 
@@ -127,36 +169,25 @@ public class GuiManager {
                     pageItems.put(globalIndex++, head);
                 }
             }
-
-            // Line Break logic
+            
+            // Line Break Logic (Same as before)
             if (lineBreak && !relationSlots.isEmpty()) {
-                // Current physical slot index in relationSlots
-                // The item just placed was at globalIndex - 1.
-                // We want next item to be at a slot that is on a new row compared to (globalIndex - 1)
-                
                 if (globalIndex > 0) {
                      int prevVirtualIndex = (globalIndex - 1) % itemsPerPage;
                      int prevPhysicalSlot = relationSlots.get(prevVirtualIndex);
                      int prevRow = prevPhysicalSlot / 9;
                      
-                     // Look ahead to find next slot that is on a different row
-                     // We need to advance globalIndex until relationSlots.get(globalIndex % itemsPerPage) / 9 > prevRow
-                     // OR if we wrap to next page
-                     
                      int checkIndex = globalIndex;
                      boolean found = false;
-                     // Limit lookahead to avoid infinite loop (e.g. 100 slots)
                      for (int i = 0; i < itemsPerPage; i++) {
                          int virtualIndex = checkIndex % itemsPerPage;
                          int physicalSlot = relationSlots.get(virtualIndex);
                          int row = physicalSlot / 9;
                          
-                         // Check if we wrapped page
                          int pageOfCheck = checkIndex / itemsPerPage;
                          int pageOfPrev = (globalIndex - 1) / itemsPerPage;
                          
                          if (pageOfCheck > pageOfPrev) {
-                             // Wrapped to next page, effectively a line break (new page starts at top)
                              globalIndex = checkIndex;
                              found = true;
                              break;
@@ -169,64 +200,51 @@ public class GuiManager {
                          }
                          checkIndex++;
                      }
-                     if (!found) {
-                         // If we couldn't find a new row on this page, maybe just push to next page?
-                         // globalIndex is already incremented, so it will naturally fill.
-                     }
                 }
             }
         }
-
-        // 2. Determine Max Pages
+        
+        // Determine Max Pages
         int totalItems = globalIndex;
         int totalPages = (totalItems > 0) ? (int) Math.ceil((double) totalItems / itemsPerPage) : 1;
         if (page > totalPages) page = totalPages;
         if (page < 1) page = 1;
-
-        // 3. Render Static Items (Border & Buttons)
-        ConfigurationSection itemsSection = menuConfig.getConfigurationSection("items");
-        if (itemsSection != null) {
-            for (String key : itemsSection.getKeys(false)) {
-                ConfigurationSection itemSec = itemsSection.getConfigurationSection(key);
-                if (itemSec == null) continue;
-                
-                // Logic for Prev/Next buttons
-                if (key.equalsIgnoreCase("previous-page") && page <= 1) continue;
-                if (key.equalsIgnoreCase("next-page") && page >= totalPages) continue;
-
-                ItemStack item = buildItem(itemSec, null, null);
-                
-                // Add PDC action if present
-                if (itemSec.contains("action")) {
-                    String action = itemSec.getString("action");
-                    org.bukkit.inventory.meta.ItemMeta meta = item.getItemMeta();
-                    meta.getPersistentDataContainer().set(new NamespacedKey(plugin, "action"), PersistentDataType.STRING, action);
-                    item.setItemMeta(meta);
-                }
-
-                List<Integer> slots = itemSec.getIntegerList("slots");
-                for (int slot : slots) {
-                    if (slot >= 0 && slot < size) {
-                        inv.setItem(slot, item);
+        
+        // Handle Prev/Next buttons visibility if they are static items in Layout
+        // In Layout mode, static items are already in 'staticItems' map.
+        // We need to hide them if not needed? 
+        // TrMenu usually handles this by having different icons or conditional icons.
+        // For simplicity, we assume Layout defines them and they are always there, 
+        // OR we check for "action" in static items and hide if invalid page.
+        // But let's stick to standard behavior: if the item is there, it's there.
+        // However, if we use the old logic's "items" section, we have logic for hiding.
+        // In Layout mode, we should check actions.
+        
+        if (menuConfig.contains("Layout")) {
+            // Post-process static items for page navigation visibility
+            Iterator<Map.Entry<Integer, ItemStack>> it = staticItems.entrySet().iterator();
+            while (it.hasNext()) {
+                Map.Entry<Integer, ItemStack> entry = it.next();
+                ItemStack item = entry.getValue();
+                if (item == null || item.getItemMeta() == null) continue;
+                String action = item.getItemMeta().getPersistentDataContainer().get(new NamespacedKey(plugin, "action"), PersistentDataType.STRING);
+                if (action != null) {
+                    if (action.contains("previous_page") && page <= 1) {
+                         inv.setItem(entry.getKey(), new ItemStack(Material.AIR)); // Remove from inventory
+                         // We don't remove from map as map is local var
+                    } else if (action.contains("next_page") && page >= totalPages) {
+                         inv.setItem(entry.getKey(), new ItemStack(Material.AIR));
                     }
                 }
             }
         }
 
-        // 4. Fill Relations for Current Page
+        // Fill Relations
         int startIndex = (page - 1) * itemsPerPage;
-        int endIndex = Math.min(startIndex + itemsPerPage, totalItems); // exclusive
+        int endIndex = Math.min(startIndex + itemsPerPage, totalItems);
         
         for (int i = startIndex; i < endIndex; i++) {
-            ItemStack item = pageItems.get(i); // might be null if we skipped indices for line break?
-            // Actually pageItems map might be sparse if we skipped globalIndex.
-            // But my loop above incremented globalIndex linearly or skipped.
-            // If I skipped, there is no entry in map.
-            // But `i` iterates all integers.
-            // Wait, if I skipped `globalIndex` from 5 to 8. `pageItems.get(6)` is null.
-            // That's correct, we don't render anything there.
-            // But we need to map `i` to physical slot.
-            
+            ItemStack item = pageItems.get(i);
             if (item != null) {
                 int virtualIndex = i % itemsPerPage;
                 int physicalSlot = relationSlots.get(virtualIndex);
@@ -237,13 +255,123 @@ public class GuiManager {
         player.openInventory(inv);
     }
 
+    private void parseLayout(FileConfiguration config, int size, List<Integer> relationSlots, Map<Integer, ItemStack> staticItems, Player player) {
+        List<?> layoutList = config.getList("Layout");
+        if (layoutList == null) return;
+        
+        List<String> rows = new ArrayList<>();
+        for (Object obj : layoutList) {
+            if (obj instanceof List) {
+                for (Object sub : (List<?>) obj) {
+                    rows.add(sub.toString());
+                }
+            } else {
+                rows.add(obj.toString());
+            }
+        }
+        
+        ConfigurationSection icons = config.getConfigurationSection("Icons");
+        // Identify relation char: defaults to '+' if not defined in relations.layout-char
+        String relChar = config.getString("relations.layout-char", "+");
+        
+        int slot = 0;
+        for (String row : rows) {
+            // Assume simple char grid for now, or space separated?
+            // TrMenu usually 1 char = 1 slot.
+            // If the string length > 9, maybe it's space separated?
+            // User example: '#   A   #' (9 chars)
+            // User example: '# `B1``A1``D2` #' -> this is tricky.
+            // Let's assume standard char grid (9 chars per row) first. 
+            // If row length > 9, we might try to split by whitespace if it looks like keys.
+            
+            // Standardizing: if row length <= 9, treat as chars.
+            // If row length > 9, split by space? 
+            // The user's example '# `B1``A1``D2` #' has backticks. Maybe they mean specific keys.
+            // Let's try to be smart:
+            String[] keys;
+            if (row.length() <= 9) {
+                keys = row.split("");
+            } else {
+                // Try splitting by space, but handle " " as a key?
+                // Actually, let's just use chars if it matches the grid size exactly (ignoring spaces?).
+                // Let's support space-separated keys if it contains spaces and length > 9.
+                keys = row.trim().split("\\s+");
+                if (keys.length > 9) {
+                     // Fallback to chars if split fails?
+                     keys = row.split("");
+                }
+            }
+            
+            for (String key : keys) {
+                if (slot >= size) break;
+                
+                if (key.equals(relChar)) {
+                    relationSlots.add(slot);
+                } else if (icons != null && icons.contains(key)) {
+                    ConfigurationSection iconSec = icons.getConfigurationSection(key);
+                    if (iconSec != null) {
+                         // Check for display section (TrMenu style)
+                         if (iconSec.contains("display")) {
+                             iconSec = iconSec.getConfigurationSection("display");
+                         }
+                         
+                         ItemStack item = buildItem(iconSec, null, player);
+                         
+                         // Actions
+                         // Check parent section for actions
+                         ConfigurationSection parentSec = icons.getConfigurationSection(key);
+                         if (parentSec.contains("actions")) {
+                             ConfigurationSection actions = parentSec.getConfigurationSection("actions");
+                             if (actions != null && actions.contains("all")) {
+                                 Object allAction = actions.get("all");
+                                 String actionStr = "";
+                                 if (allAction instanceof List) {
+                                     actionStr = String.join(";", (List<String>) allAction);
+                                 } else {
+                                     actionStr = allAction.toString();
+                                 }
+                                 
+                                 org.bukkit.inventory.meta.ItemMeta meta = item.getItemMeta();
+                                 meta.getPersistentDataContainer().set(new NamespacedKey(plugin, "action"), PersistentDataType.STRING, actionStr);
+                                 item.setItemMeta(meta);
+                             }
+                         }
+                         
+                         staticItems.put(slot, item);
+                    }
+                } else {
+                    // Empty or Unknown
+                }
+                slot++;
+            }
+        }
+    }
+
     private ItemStack buildItem(ConfigurationSection section, Map<String, String> placeholders, OfflinePlayer skullOwner) {
         if (section == null) return new ItemStack(Material.AIR);
         String matName = section.getString("material", "STONE");
+        
+        ItemStack item;
+        Integer customModelData = null;
+        
+        // Parse material{cmd:1000} syntax
+        if (matName.contains("{cmd:") && matName.endsWith("}")) {
+            try {
+                int start = matName.indexOf("{cmd:");
+                int end = matName.indexOf("}", start);
+                String cmdStr = matName.substring(start + 5, end);
+                customModelData = Integer.parseInt(cmdStr);
+                matName = matName.substring(0, start).trim();
+            } catch (NumberFormatException e) {
+                // Ignore invalid format, proceed with original string
+            }
+        }
+        
         Material mat = Material.matchMaterial(matName);
         if (mat == null) mat = Material.STONE;
-
-        ItemStack item = new ItemStack(mat);
+        item = new ItemStack(mat);
+        
+        final Integer finalCmd = customModelData;
 
         // Name
         String name = section.getString("name", "");
@@ -273,14 +401,20 @@ public class GuiManager {
                 meta.displayName(MiniMessage.miniMessage().deserialize(finalName));
             }
             meta.lore(loreComponents);
+            
+            // Apply CustomModelData from syntax or config
+            if (finalCmd != null) {
+                meta.setCustomModelData(finalCmd);
+            }
             if (section.contains("custom-model-data")) {
                 meta.setCustomModelData(section.getInt("custom-model-data"));
             }
+            
             if (meta instanceof SkullMeta && skullOwner != null) {
                 ((SkullMeta) meta).setOwningPlayer(skullOwner);
             }
         });
-
+        
         return item;
     }
 }

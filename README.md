@@ -16,6 +16,8 @@
     *   `tp` 快速传送至伴侣
     *   `kiss` 亲吻特效
 *   **现代配色**: 全面支持 MiniMessage 格式，内置统一的现代 RGB 配色方案。
+*   **可视化 GUI**: 支持 TrMenu 风格的字符网格布局 (`Layout`)，所见即所得。
+*   **高级材质**: 支持 `paper{cmd:1000}` 语法直接定义 CustomModelData，便于资源包适配。
 *   **灵活配置**: 支持 SQLite/MySQL 数据库，所有消息均可自定义。
 
 ## 🎨 配色方案说明
@@ -33,6 +35,36 @@
 *   **错误**: `<color:#FF6B6B>` (柔红)
 *   **伴侣**: `<color:#FF8FB1>` (粉色)
 *   **兄弟**: `<color:#6EC6FF>` (天蓝)
+
+## 🖥️ 高级 GUI 配置
+
+插件支持高度自定义的 GUI 布局，您可以在 `menu.yml` 中使用字符画的形式设计菜单。
+
+### 布局示例 (Layout)
+
+```yaml
+Layout:
+  - '#########'
+  - '#A  Z  B#'
+  - '#   +   #'
+  - '#########'
+Icons:
+  '#': 
+    display:
+      material: GRAY_STAINED_GLASS_PANE
+      name: " "
+  'Z':
+    display:
+      material: "PAPER{cmd:10001}" # 支持 CustomModelData
+      name: "<green>自定义图标"
+    actions:
+      all: "sound:UI_BUTTON_CLICK-1-1; close"
+```
+
+*   **Layout**: 使用字符定义界面，`+` (或 `relations.layout-char` 定义的字符) 代表关系列表的展示槽位。
+*   **Icons**: 定义字符对应的物品。
+*   **CMD 语法**: 在 material 中使用 `{cmd:123}` 即可快速指定 CustomModelData。
+*   **多动作**: `actions` 支持分号分隔的多个动作，如 `sound:xxx; close; console:say hi`。
 
 ## 🧩 PlaceholderAPI 变量
 
@@ -68,6 +100,7 @@
 *   `/rel admin affinity <set/add/remove> <玩家1> [玩家2] <类型> <数值>` - 管理亲密度
     *   **注意**: 管理员指令修改亲密度**不受每日上限限制**。
 *   `/rel save <类型> [数值]` - 将手中物品保存为亲密度道具 (需 `relations.admin.save` 权限)
+*   `/rel debug addfake <名字> <类型> [亲密度]` - 添加虚假关系用于测试 GUI 显示 (仅内存临时生效名字，数据库写入关系)
 
 ## ⚙️ 权限节点
 

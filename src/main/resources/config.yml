@@ -81,15 +81,15 @@ messages:
     
   help:
     header: "<color:#5A5A5A>--- <color:#FFD479>关系插件帮助</color> ---</color>"
-    gui: "<color:#6EC6FF>/rel gui <color:#5A5A5A>- <color:#A0A0A0>打开关系菜单"
-    gender: "<color:#6EC6FF>/rel gender <male|female|other> <color:#5A5A5A>- <color:#A0A0A0>设置性别"
-    top: "<color:#6EC6FF>/rel top <类型> <color:#5A5A5A>- <color:#A0A0A0>查看亲密度排行榜"
-    request: "<color:#6EC6FF>/rel request <玩家> <类型> <color:#5A5A5A>- <color:#A0A0A0>发送关系请求"
-    accept: "<color:#6EC6FF>/rel accept <玩家> <color:#5A5A5A>- <color:#A0A0A0>接受请求"
-    deny: "<color:#6EC6FF>/rel deny <玩家> <color:#5A5A5A>- <color:#A0A0A0>拒绝请求"
-    remove: "<color:#6EC6FF>/rel remove <玩家> <color:#5A5A5A>- <color:#A0A0A0>解除关系"
-    marry: "<color:#6EC6FF>/rel marry <sethome|home|gift|tp> <color:#5A5A5A>- <color:#A0A0A0>婚姻专属指令"
-    save: "<color:#6EC6FF>/rel save <类型> [数值] <color:#5A5A5A>- <color:#A0A0A0>保存亲密度物品(管理员)"
+    gui: "&7/rel gui <color:#5A5A5A>- &f打开关系菜单"
+    gender: "&7/rel gender <male|female|other> <color:#5A5A5A>- &f设置性别"
+    top: "&7/rel top <类型> <color:#5A5A5A>- &f查看亲密度排行榜"
+    request: "&7/rel request <玩家> <类型> <color:#5A5A5A>- &f发送关系请求"
+    accept: "&7/rel accept <玩家> <color:#5A5A5A>- &f接受请求"
+    deny: "&7/rel deny <玩家> <color:#5A5A5A>- &f拒绝请求"
+    remove: "&7/rel remove <玩家> <color:#5A5A5A>- &f解除关系"
+    marry: "&7/rel marry <sethome|home|gift|tp> <color:#5A5A5A>- &f婚姻专属指令"
+    save: "&7/rel save <类型> [数值] <color:#5A5A5A>- &f保存亲密度物品(管理员)"
   
   usage:
     save: "<color:#FF6B6B>用法: /relations save <类型> [数值]"
@@ -122,6 +122,7 @@ messages:
     
   marriage:
     home-set: "<color:#6BFF95>已设置 <color:#FF8FB1>婚姻家园</color>！</color>"
+    no-home-set: "<color:#FF6B6B>你还没有设置婚姻家园！请使用 /rel marry sethome 设置。</color>"
     home-teleport: "<color:#6BFF95>正在传送至 <color:#FF8FB1>婚姻家园</color>...</color>"
     gift-sent: "<color:#6BFF95>已将礼物送给 <color:#FFD866><target></color>！</color>"
     gift-received: "<color:#6BFF95>你收到了来自 <color:#FFD866><target></color> 的礼物！</color>"

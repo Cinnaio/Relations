@@ -4,7 +4,6 @@ main: com.github.cinnaio.relations.Relations
 api-version: '1.21'
 authors: [Cinnaio]
 depend: [PlaceholderAPI]
-softdepend: [PlaceholderAPI]
 folia-supported: true
 
 commands:
