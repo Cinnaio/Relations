@@ -103,7 +103,7 @@ relations:
         material: 'STONE' # 婚姻关系使用石头作为标题图标
         name: "<display> <red>(❤)"
 ```
-
+```yaml
 Icons:
   '#': 
     display:
