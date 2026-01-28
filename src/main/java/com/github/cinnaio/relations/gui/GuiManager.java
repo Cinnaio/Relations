@@ -31,6 +31,14 @@ public class GuiManager {
     public void openRelationsGui(Player player) {
         openRelationsGui(player, 1);
     }
+    
+    public void closeAllMenus() {
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            if (p.getOpenInventory().getTopInventory().getHolder() instanceof RelationsHolder) {
+                p.closeInventory();
+            }
+        }
+    }
 
     public void openRelationsGui(Player player, int page) {
         FileConfiguration menuConfig = plugin.getConfigManager().getMenuConfig();
@@ -50,7 +58,7 @@ public class GuiManager {
         Map<Integer, ItemStack> staticItems = new HashMap<>();
         
         if (menuConfig.contains("Layout")) {
-            parseLayout(menuConfig, size, relationSlots, staticItems, player);
+            parseLayout(menuConfig, size, relationSlots, staticItems, player, page);
         } else {
             // Legacy/Default Mode
             // Load valid slots for relations
@@ -257,18 +265,44 @@ public class GuiManager {
         player.openInventory(inv);
     }
 
-    private void parseLayout(FileConfiguration config, int size, List<Integer> relationSlots, Map<Integer, ItemStack> staticItems, Player player) {
+    private void parseLayout(FileConfiguration config, int size, List<Integer> relationSlots, Map<Integer, ItemStack> staticItems, Player player, int page) {
         List<?> layoutList = config.getList("Layout");
         if (layoutList == null) return;
         
         List<String> rows = new ArrayList<>();
-        for (Object obj : layoutList) {
-            if (obj instanceof List) {
-                for (Object sub : (List<?>) obj) {
+        
+        // Detect layout type: Single Page (List<String>) or Multi Page (List<List<String>>)
+        boolean isMultiPage = false;
+        if (!layoutList.isEmpty() && layoutList.get(0) instanceof List) {
+            isMultiPage = true;
+        }
+
+        if (isMultiPage) {
+            // Get layout for specific page
+            int index = page - 1;
+            if (index < 0) index = 0;
+            
+            // If page exceeds defined layouts, use the last one
+            if (index >= layoutList.size()) {
+                index = layoutList.size() - 1;
+            }
+            
+            Object pageLayoutObj = layoutList.get(index);
+            if (pageLayoutObj instanceof List) {
+                for (Object sub : (List<?>) pageLayoutObj) {
                     rows.add(sub.toString());
                 }
-            } else {
-                rows.add(obj.toString());
+            }
+        } else {
+            // Legacy/Single Page Mode: Flatten everything
+            for (Object obj : layoutList) {
+                if (obj instanceof List) {
+                    for (Object sub : (List<?>) obj) {
+                        rows.add(sub.toString());
+                    }
+                } else {
+                    rows.add(obj.toString());
+                }
             }
         }
         

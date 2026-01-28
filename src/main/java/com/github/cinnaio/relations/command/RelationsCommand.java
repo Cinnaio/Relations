@@ -172,6 +172,7 @@ public class RelationsCommand implements CommandExecutor, TabCompleter {
                     player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-permission")));
                     return true;
                 }
+                plugin.getGuiManager().closeAllMenus();
                 plugin.getConfigManager().reload();
                 plugin.getAffinityItemManager().loadItems();
                 player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("reload-success")));
@@ -417,6 +418,7 @@ public class RelationsCommand implements CommandExecutor, TabCompleter {
         
         if (sub.equals("reload")) {
             // Already handled by top-level reload, but kept for legacy admin sub-command compatibility
+            plugin.getGuiManager().closeAllMenus();
             plugin.getConfigManager().reload();
             plugin.getAffinityItemManager().loadItems();
             sender.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("reload-success")));
