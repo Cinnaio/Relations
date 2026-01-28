@@ -42,12 +42,68 @@
 
 ### 布局示例 (Layout)
 
+插件支持**单页**和**多页**两种布局模式：
+
+**1. 单页模式** (经典):
 ```yaml
 Layout:
   - '#########'
   - '#A  Z  B#'
   - '#   +   #'
   - '#########'
+```
+
+**2. 多页模式** (推荐):
+支持为每一页单独定义布局 (列表的列表)，超出定义的页数将自动重复使用最后一页的布局。
+```yaml
+Layout:
+  # 第一页布局
+  - - '#########'
+    - '#+++++++#'
+    - '#+++++++#'
+    - '#+++++++#'
+    - '#+++++++#'
+    - '####N####' # 只有下一页按钮
+  # 第二页及后续布局
+  - - '#########'
+    - '#+++++++#'
+    - '#+++++++#'
+    - '#+++++++#'
+    - '#+++++++#'
+    - '###PZ####' # 包含上一页和关闭按钮
+```
+
+### 关系列表配置 (Relations)
+
+您可以在 `menu.yml` 的 `relations` 部分自定义关系列表的显示样式，支持为不同类型的关系设置独立的图标和 Lore。
+
+```yaml
+relations:
+  layout-char: '+' # Layout 中用于显示列表的字符
+  
+  # 默认类型标题 (如 "兄弟", "伴侣")
+  header-item:
+    material: BOOK
+    name: "<display>"
+    lore:
+      - "当前: <current>/<max>"
+
+  # 默认成员头像
+  member-item:
+    material: PLAYER_HEAD
+    name: "<display>"
+    lore:
+      - "亲密度: <affinity>"
+      - "日期: <date>"
+
+  # 针对特定类型的覆盖配置
+  types:
+    marriage:
+      header-item:
+        material: 'STONE' # 婚姻关系使用石头作为标题图标
+        name: "<display> <red>(❤)"
+```
+
 Icons:
   '#': 
     display:
@@ -65,6 +121,38 @@ Icons:
 *   **Icons**: 定义字符对应的物品。
 *   **CMD 语法**: 在 material 中使用 `{cmd:123}` 即可快速指定 CustomModelData。
 *   **多动作**: `actions` 支持分号分隔的多个动作，如 `sound:xxx; close; console:say hi`。
+
+## 📈 亲密度等级与奖励
+
+在 `config.yml` 中，您可以为每个亲密度等级配置奖励和动作。当玩家关系升级时，将自动执行这些动作。
+
+```yaml
+levels:
+  1: 0
+  2:
+    affinity: 500
+    actions:
+      - "[message] <color:#6BFF95>恭喜！你和 <partner> 的关系达到了 Lv.2！</color>"
+      - "[title] <color:#FF8FB1>关系升级！</color>;<color:#FFD866>Lv.2 达成</color>;10;70;20"
+      - "[broadcast] <player> 和 <partner> 的关系更进一步了！"
+      - "[potion] SPEED;60;1" # 给予速度效果 60秒 1级
+  3: 1000
+```
+
+**支持的动作类型**:
+*   `[op] <command>`: 以 OP 身份执行指令 (慎用)
+*   `[player] <command>`: 以玩家身份执行指令
+*   `[console] <command>`: 以控制台身份执行指令
+*   `[message] <text>`: 发送聊天消息
+*   `[broadcast] <text>`: 发送全服公告
+*   `[title] <title>;<subtitle>;<in>;<stay>;<out>`: 发送屏幕标题
+*   `[potion] <type>;<duration>;<level>`: 给予药水效果 (时长单位: 秒)
+
+**可用占位符**:
+*   `<player>`: 玩家名称
+*   `<partner>`: 伴侣/对象名称
+*   `<level>`: 当前等级
+*   `<type>`: 关系类型
 
 ## 🧩 PlaceholderAPI 变量
 
@@ -96,7 +184,7 @@ Icons:
 *   `/rel marry <sethome|home|gift|tp|list>` - 婚姻专属指令
 
 ### 管理员指令 (支持控制台)
-*   `/rel admin reload` - 重载配置文件
+*   `/rel admin reload` - 重载配置文件 (会自动关闭所有玩家打开的 GUI)
 *   `/rel admin affinity <set/add/remove> <玩家1> [玩家2] <类型> <数值>` - 管理亲密度
     *   **注意**: 管理员指令修改亲密度**不受每日上限限制**。
 *   `/rel save <类型> [数值]` - 将手中物品保存为亲密度道具 (需 `relations.admin.save` 权限)

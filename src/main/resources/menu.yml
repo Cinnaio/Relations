@@ -1,13 +1,12 @@
 title: "你的关系列表 - 第 <page> 页"
 size: 54
 
-# ==============================================================================
-# 新版布局配置示例 (Layout System)
-# ==============================================================================
 # 使用 Layout 可以更直观地配置菜单布局。
 # 字符映射规则在 Icons 部分定义。
 # 特殊字符 '+' 用于放置动态关系列表 (可在 relations.layout-char 修改)。
 
+# 单页模式 (旧兼容)：如果 Layout 列表中的第一项是字符串（String），则视为单页/通用布局，系统会将所有行合并解析。
+# 多页模式 (新功能)：如果 Layout 列表中的第一项是列表（List），则视为多页布局
 Layout:
 - - '#########'
   - '#+++++++#'
@@ -80,7 +79,7 @@ relations:
   types:
     marriage:
       header-item:
-        material: 'NETHERSTAR'
+        material: 'STONE'
         name: "<display> <color:#FF8FB1>(❤)"
         lore:
           - "<color:#A0A0A0>当前: <color:#6EC6FF><current><color:#5A5A5A>/<color:#AEEFFF><max>"
