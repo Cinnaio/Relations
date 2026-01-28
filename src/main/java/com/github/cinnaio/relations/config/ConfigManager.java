@@ -40,6 +40,9 @@ public class ConfigManager {
         plugin.reloadConfig();
         config = plugin.getConfig();
         loadMenuConfig();
+        if (plugin.getLevelManager() != null) {
+            plugin.getLevelManager().loadLevels();
+        }
     }
     
     public FileConfiguration getMenuConfig() {

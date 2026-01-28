@@ -68,16 +68,37 @@ relations:
       - "<color:#A0A0A0>对象: <color:#FFD866><player>"
       - "<color:#A0A0A0>亲密度: <color:#6BFF95><affinity>"
       - "<color:#A0A0A0>日期: <color:#E6E6E6><date>"
+      - "<color:#A0A0A0>等级: <color:#E6E6E6><level_display>"
 
   # 不同类型的特殊配置 (覆盖默认)
   types:
     marriage:
       header-item:
-        material: NETHER_STAR
+        material: 'NETHERSTAR'
         name: "<display> <color:#FF8FB1>(❤)"
+        lore:
+          - "<color:#A0A0A0>当前: <color:#6EC6FF><current><color:#5A5A5A>/<color:#AEEFFF><max>"
     brother:
       header-item:
         material: IRON_SWORD
+        name: "<display>"
+        lore:
+          - "<color:#A0A0A0>当前: <color:#6EC6FF><current><color:#5A5A5A>/<color:#AEEFFF><max>"
     sister:
       header-item:
         material: CAKE
+        name: "<display>"
+        lore:
+          - "<color:#A0A0A0>当前: <color:#6EC6FF><current><color:#5A5A5A>/<color:#AEEFFF><max>"
+    best_friend:
+      header-item:
+        material: DIAMOND
+        name: "<display>"
+        lore:
+          - "<color:#A0A0A0>当前: <color:#6EC6FF><current><color:#5A5A5A>/<color:#AEEFFF><max>"
+    mentor:
+      header-item:
+        material: EXPERIENCE_BOTTLE
+        name: "<display>"
+        lore:
+          - "<color:#A0A0A0>当前: <color:#6EC6FF><current><color:#5A5A5A>/<color:#AEEFFF><max>"

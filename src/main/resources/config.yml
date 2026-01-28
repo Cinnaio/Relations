@@ -9,6 +9,30 @@ database:
   ssl: false
   pool-size: 10
 
+# 亲密度等级配置
+# 格式1 (简单): 等级: 所需亲密度
+# 格式2 (高级):
+#   等级:
+#     affinity: 所需亲密度
+#     actions:
+#       - "[message] 消息内容"
+#       - "[broadcast] 公告内容"
+#       - "[command] 指令"
+#       - "[title] 主标题;副标题;淡入;停留;淡出"
+#       - "[potion] 效果;时长(秒);等级"
+# 可用动作: [op], [player], [console], [message], [broadcast], [title], [potion]
+# 占位符: <player>, <partner>, <level>, <type>
+levels:
+  1: 0
+  2:
+    affinity: 500
+    actions:
+      - "[message] <color:#6BFF95>恭喜！你和 <partner> 的关系达到了 Lv.2！</color>"
+      - "[title] <color:#FF8FB1>关系升级！</color>;<color:#FFD866>Lv.2 达成</color>;10;70;20"
+  3: 1000
+  4: 2000
+  5: 5000
+
 relations:
   marriage:
     display: "<color:#FF8FB1><bold>伴侣</bold></color>"
@@ -27,7 +51,7 @@ relations:
     daily-affinity-limit: 1000
   best_friend:
     display: "<color:#FFD479><bold>挚友</bold></color>"
-    max: 10
+    max: 5
     daily-affinity-limit: 1000
   sister:
     display: "<color:#C39BFF><bold>闺蜜</bold></color>"

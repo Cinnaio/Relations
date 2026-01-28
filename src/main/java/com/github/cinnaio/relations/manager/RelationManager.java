@@ -267,6 +267,13 @@ public class RelationManager {
         
         if (targetRel != null) {
             Relation finalTargetRel = targetRel;
+            
+            int oldAffinity = finalTargetRel.getAffinity();
+            int oldLevel = 0;
+            if (plugin.getLevelManager() != null) {
+                oldLevel = plugin.getLevelManager().getLevel(oldAffinity);
+            }
+
             int diff = amount - finalTargetRel.getAffinity();
             
             // Check daily limit if increasing
@@ -360,6 +367,13 @@ public class RelationManager {
             
             finalTargetRel.setAffinity(amount);
             int finalAmount = amount;
+            
+            if (plugin.getLevelManager() != null) {
+                int newLevel = plugin.getLevelManager().getLevel(finalAmount);
+                if (newLevel > oldLevel) {
+                    processLevelUp(p1, p2, oldLevel, newLevel, finalTargetRel.getType());
+                }
+            }
             
             // COMBINED UPDATE TASK
             final Relation relToSave = finalTargetRel;
@@ -490,6 +504,38 @@ public class RelationManager {
                 relationCache.put(player, relations);
             } catch (SQLException e) {
                 e.printStackTrace();
+            }
+        }
+    }
+
+    private void processLevelUp(UUID p1, UUID p2, int oldLevel, int newLevel, String type) {
+        if (plugin.getActionManager() == null) return;
+        
+        for (int i = oldLevel + 1; i <= newLevel; i++) {
+            List<String> actions = plugin.getLevelManager().getLevelActions(i);
+            if (actions.isEmpty()) continue;
+            
+            Player player1 = Bukkit.getPlayer(p1);
+            Player player2 = Bukkit.getPlayer(p2);
+            
+            // Execute for P1
+            if (player1 != null) {
+                Map<String, String> placeholders = new HashMap<>();
+                placeholders.put("<player>", player1.getName());
+                placeholders.put("<partner>", player2 != null ? player2.getName() : "Unknown");
+                placeholders.put("<level>", String.valueOf(i));
+                placeholders.put("<type>", plugin.getConfigManager().getRelationDisplay(type));
+                plugin.getActionManager().executeActions(player1, actions, placeholders);
+            }
+            
+            // Execute for P2
+            if (player2 != null) {
+                Map<String, String> placeholders = new HashMap<>();
+                placeholders.put("<player>", player2.getName());
+                placeholders.put("<partner>", player1 != null ? player1.getName() : "Unknown");
+                placeholders.put("<level>", String.valueOf(i));
+                placeholders.put("<type>", plugin.getConfigManager().getRelationDisplay(type));
+                plugin.getActionManager().executeActions(player2, actions, placeholders);
             }
         }
     }

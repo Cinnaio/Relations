@@ -163,6 +163,8 @@ public class GuiManager {
                     placeholders.put("<player>", partnerName != null ? partnerName : "Unknown");
                     
                     placeholders.put("<affinity>", String.valueOf(r.getAffinity()));
+                    placeholders.put("<level>", String.valueOf(plugin.getLevelManager().getLevel(r.getAffinity())));
+                    placeholders.put("<level_display>", plugin.getLevelManager().getLevelDisplay(r.getAffinity()));
                     placeholders.put("<date>", r.getCreatedAt().toString());
 
                     ItemStack head = buildItem(memberSection, placeholders, partner);

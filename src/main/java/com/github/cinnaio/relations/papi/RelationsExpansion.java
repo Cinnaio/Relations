@@ -70,6 +70,28 @@ public class RelationsExpansion extends PlaceholderExpansion {
             return "0";
         }
         
+        // %relations_level_<type>%
+        if (params.startsWith("level_")) {
+            // Check if it is "level_display_..."
+            boolean isDisplay = params.startsWith("level_display_");
+            String type;
+            if (isDisplay) {
+                type = params.substring("level_display_".length());
+            } else {
+                type = params.substring("level_".length());
+            }
+            
+            Relation r = getFirstRelation(player.getUniqueId(), type);
+            if (r != null) {
+                if (isDisplay) {
+                    return plugin.getLevelManager().getLevelDisplay(r.getAffinity());
+                } else {
+                    return String.valueOf(plugin.getLevelManager().getLevel(r.getAffinity()));
+                }
+            }
+            return isDisplay ? "Lv.0" : "0";
+        }
+
         // %relations_marriage_date%
         if (params.equals("marriage_date")) {
              Relation r = plugin.getRelationManager().getMarriage(player.getUniqueId());

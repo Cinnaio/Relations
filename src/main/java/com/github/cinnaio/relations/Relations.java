@@ -7,7 +7,9 @@ import com.github.cinnaio.relations.database.RelationDAO;
 import com.github.cinnaio.relations.gui.GuiManager;
 import com.github.cinnaio.relations.listener.RelationListener;
 import com.github.cinnaio.relations.database.PlayerDAO;
+import com.github.cinnaio.relations.manager.ActionManager;
 import com.github.cinnaio.relations.manager.AffinityItemManager;
+import com.github.cinnaio.relations.manager.LevelManager;
 import com.github.cinnaio.relations.manager.PlayerManager;
 import com.github.cinnaio.relations.manager.RelationManager;
 import com.github.cinnaio.relations.papi.RelationsExpansion;
@@ -22,11 +24,15 @@ public final class Relations extends JavaPlugin {
     private PlayerManager playerManager;
     private GuiManager guiManager;
     private AffinityItemManager affinityItemManager;
+    private LevelManager levelManager;
+    private ActionManager actionManager;
 
     @Override
     public void onEnable() {
         // Config
         this.configManager = new ConfigManager(this);
+        this.actionManager = new ActionManager(this);
+        this.levelManager = new LevelManager(this);
 
         // Database
         // Check if DB needs initialization or if it was just a soft reload
@@ -83,4 +89,6 @@ public final class Relations extends JavaPlugin {
     public PlayerManager getPlayerManager() { return playerManager; }
     public GuiManager getGuiManager() { return guiManager; }
     public AffinityItemManager getAffinityItemManager() { return affinityItemManager; }
+    public LevelManager getLevelManager() { return levelManager; }
+    public ActionManager getActionManager() { return actionManager; }
 }
