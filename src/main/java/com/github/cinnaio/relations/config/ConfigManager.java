@@ -14,7 +14,9 @@ public class ConfigManager {
     private final Relations plugin;
     private FileConfiguration config;
     private FileConfiguration menuConfig;
+    private FileConfiguration quickMenuConfig;
     private java.io.File menuFile;
+    private java.io.File quickMenuFile;
     
     private static final Pattern HEX_PATTERN_AMP = Pattern.compile("&#([0-9a-fA-F]{6})");
     private static final Pattern HEX_PATTERN_BRACE = Pattern.compile("\\{#([0-9a-fA-F]{6})\\}");
@@ -26,6 +28,7 @@ public class ConfigManager {
         this.config = this.plugin.getConfig();
         
         loadMenuConfig();
+        loadQuickMenuConfig();
     }
     
     private void loadMenuConfig() {
@@ -36,10 +39,19 @@ public class ConfigManager {
         this.menuConfig = org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(menuFile);
     }
 
+    private void loadQuickMenuConfig() {
+        this.quickMenuFile = new java.io.File(plugin.getDataFolder(), "quick_menu.yml");
+        if (!quickMenuFile.exists()) {
+            plugin.saveResource("quick_menu.yml", false);
+        }
+        this.quickMenuConfig = org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(quickMenuFile);
+    }
+
     public void reload() {
         plugin.reloadConfig();
         config = plugin.getConfig();
         loadMenuConfig();
+        loadQuickMenuConfig();
         if (plugin.getLevelManager() != null) {
             plugin.getLevelManager().loadLevels();
         }
@@ -47,6 +59,10 @@ public class ConfigManager {
     
     public FileConfiguration getMenuConfig() {
         return menuConfig;
+    }
+
+    public FileConfiguration getQuickMenuConfig() {
+        return quickMenuConfig;
     }
 
     public String getDatabaseType() {

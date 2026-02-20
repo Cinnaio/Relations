@@ -1,0 +1,73 @@
+# 快捷关系建立菜单配置
+# 当玩家对目标玩家按下指定按键时触发 (右键)
+
+# 触发设置
+trigger:
+  enable: true
+  sneak: false # 是否需要按住 Shift
+
+# GUI 设置
+title: "与 <target> 建立关系"
+size: 27
+
+# 布局映射
+mappings:
+  border:
+    material: GRAY_STAINED_GLASS_PANE
+    name: " "
+    sorts: [ 0-9, 17-26 ]
+
+# 关系按钮
+# 点击后将执行 /rel request <target> <type>
+items:
+  marriage:
+    material: "RED_DYE{cmd:10001}" # 示例 CMD
+    name: "<!i><color:#FF8FB1>求婚"
+    lore:
+      - "<!i><gray>点击向 <target> 发送求婚请求"
+    slot: 11
+    actions:
+      - "[player] rel request <target> marriage"
+      - "[close]"
+
+  brother:
+    material: IRON_SWORD
+    name: "<!i><color:#6EC6FF>结拜兄弟"
+    lore:
+      - "<!i><gray>点击与 <target> 结拜为兄弟"
+    lore:
+      - "<!i><gray>点击与 <target> 结拜为兄弟"
+    slot: 12
+    actions:
+      - "[player] rel request <target> brother"
+      - "[close]"
+
+  sister:
+    material: CAKE
+    name: "<!i><color:#C39BFF>结为闺蜜"
+    lore:
+      - "<!i><gray>点击与 <target> 结为闺蜜"
+    slot: 13
+    actions:
+      - "[player] rel request <target> sister"
+      - "[close]"
+
+  best_friend:
+    material: DIAMOND
+    name: "<!i><color:#FFD479>成为挚友"
+    lore:
+      - "<!i><gray>点击与 <target> 成为挚友"
+    slot: 14
+    actions:
+      - "[player] rel request <target> best_friend"
+      - "[close]"
+
+  mentor:
+    material: EXPERIENCE_BOTTLE
+    name: "<!i><color:#AEEFFF>拜师/收徒"
+    lore:
+      - "<!i><gray>点击与 <target> 建立师徒关系"
+    slot: 15
+    actions:
+      - "[player] rel request <target> mentor"
+      - "[close]"

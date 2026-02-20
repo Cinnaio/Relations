@@ -35,7 +35,7 @@ levels:
 
 relations:
   marriage:
-    display: "<color:#FF8FB1><bold>伴侣</bold></color>"
+    display: "<!i><color:#FF8FB1><bold>伴侣 <color:#FF8FB1>(❤)"
     max: 1
     # 婚姻专属功能
     features:
@@ -46,26 +46,26 @@ relations:
     # 每日亲密度上限 (默认)
     daily-affinity-limit: 1000
   brother:
-    display: "<color:#6EC6FF><bold>兄弟</bold></color>"
+    display: "<!i><color:#6EC6FF><bold>兄弟"
     max: 5
     daily-affinity-limit: 1000
   best_friend:
-    display: "<color:#FFD479><bold>挚友</bold></color>"
+    display: "<!i><color:#FFD479><bold>挚友"
     max: 5
     daily-affinity-limit: 1000
   sister:
-    display: "<color:#C39BFF><bold>闺蜜</bold></color>"
+    display: "<!i><color:#C39BFF><bold>闺蜜"
     max: 5
     daily-affinity-limit: 1000
   mentor:
-    display: "<color:#AEEFFF><bold>导师</bold></color>"
+    display: "<!i><color:#AEEFFF><bold>导师"
     max: 1
     daily-affinity-limit: 1000
 
 debug: false
 
 messages:
-  prefix: "<color:#FFD479><bold>[关系]</bold></color> "
+  prefix: "<color:#FFD479><bold>[关系] "
   no-permission: "<color:#FF6B6B>你没有权限执行此操作。</color>"
   player-only: "<color:#FF6B6B>该指令仅限玩家使用。</color>"
   player-not-found: "<color:#FF6B6B>找不到该玩家。</color>"
@@ -131,7 +131,7 @@ messages:
     affinity-item-received: "<color:#6BFF95><color:#FFD866><player></color> 对你使用了亲密度物品，你们的亲密度增加了 <color:#FFD866><amount></color>！</color>"
     cannot-relate-self: "<color:#FF6B6B>你不能与自己建立关系。</color>"
     request-sent: "<color:#6BFF95>已向 <color:#FFD866><target></color> 发送 <color:#6EC6FF>关系请求</color>。</color>"
-    request-received: "<color:#6BFF95><color:#FFD866><player></color> 想要成为你的 <relation>。<newline> <click:run_command:'/rel accept <player>'><hover:show_text:'<color:#6BFF95>点击接受请求</color>'><color:#6BFF95><bold>[接受]</bold></color></hover></click>  <click:run_command:'/rel deny <player>'><hover:show_text:'<color:#FF6B6B>点击拒绝请求</color>'><color:#FF6B6B><bold>[拒绝]</bold></color></hover></click></color>"
+    request-received: "<color:#6BFF95><color:#FFD866><player></color> 想要成为你的 <relation>。<newline> <click:run_command:'/rel accept <player>'><hover:show_text:'<color:#6BFF95>点击接受请求</color>'><color:#6BFF95><bold>[接受]</hover></click>  <click:run_command:'/rel deny <player>'><hover:show_text:'<color:#FF6B6B>点击拒绝请求</color>'><color:#FF6B6B><bold>[拒绝]</hover></click></color>"
     request-accepted: "<color:#6BFF95>你现在与 <color:#FFD866><target></color> 建立了 <relation> 关系！</color>"
     request-denied: "<color:#FF6B6B>你拒绝了来自 <color:#FFD866><target></color> 的请求。</color>"
     request-denied-target: "<color:#FF6B6B><color:#FFD866><target></color> 拒绝了你的请求。</color>"

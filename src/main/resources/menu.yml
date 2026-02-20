@@ -1,109 +1,74 @@
 title: "你的关系列表 - 第 <page> 页"
-size: 54
-
-# 使用 Layout 可以更直观地配置菜单布局。
-# 字符映射规则在 Icons 部分定义。
-# 特殊字符 '+' 用于放置动态关系列表 (可在 relations.layout-char 修改)。
-
-# 单页模式 (旧兼容)：如果 Layout 列表中的第一项是字符串（String），则视为单页/通用布局，系统会将所有行合并解析。
-# 多页模式 (新功能)：如果 Layout 列表中的第一项是列表（List），则视为多页布局
-Layout:
-- - '#########'
-  - '#+++++++#'
-  - '#+++++++#'
-  - '#+++++++#'
-  - '#+++++++#'
-  - '####ZN###'
-- - '#########'
-  - '#+++++++#'
-  - '#+++++++#'
-  - '#+++++++#'
-  - '#+++++++#'
-  - '###PZ####'
-
-Icons:
-  '#': 
-    display:
-      material: GRAY_STAINED_GLASS_PANE
-      name: " "
   
-  # 示例：使用 CMD 语法的纸张
-  Z: 
-    display:
-      material: "PAPER{cmd:10003}"
-      name: "<red>关闭菜单"
-      lore:
-        - "<gray>点击关闭当前界面"
-    actions:
-      all: "close; sound:UI_BUTTON_CLICK-1-1"
-
-  # 上一页按钮
-  P:
-    display:
-      material: ARROW
-      name: "<yellow>上一页"
-    actions:
-      all: "previous_page"
-
-  # 下一页按钮
-  N:
-    display:
-      material: ARROW
-      name: "<yellow>下一页"
-    actions:
-      all: "next_page"
+mappings:
+  border:
+    material: GRAY_STAINED_GLASS_PANE
+    name: ' '
+    sorts: [ 0-8, 9, 17, 18, 26, 27, 35, 36, 44, 46-53 ]
+  
+  button_next:
+    material: ARROW
+    name: "<yellow>下一页"
+    sorts: [ 53 ]
+    
+  button_close:
+    material: "PAPER{cmd:10003}"
+    name: "<red>关闭菜单"
+    sorts: [ 49 ]
+    
+  button_previous:
+    material: ARROW
+    name: "<yellow>上一页"
+    sorts: [ 45 ]
 
 # 关系列表配置
 relations:
-  layout-char: '+' # 指定 Layout 中用于放置关系的字符
-  line-break: true
-  
   # 默认类型标题
   header-item:
     material: BOOK
     name: "<display>"
     lore:
-      - "<color:#A0A0A0>当前: <color:#6EC6FF><current><color:#5A5A5A>/<color:#AEEFFF><max>"
+      - "<!i><color:#A0A0A0>当前: <color:#6EC6FF><current><color:#5A5A5A>/<color:#AEEFFF><max>"
       
   # 默认成员头像
   member-item:
     material: PLAYER_HEAD
     name: "<display>"
     lore:
-      - "<color:#A0A0A0>对象: <color:#FFD866><player>"
-      - "<color:#A0A0A0>亲密度: <color:#6BFF95><affinity>"
-      - "<color:#A0A0A0>日期: <color:#E6E6E6><date>"
-      - "<color:#A0A0A0>等级: <color:#E6E6E6><level_display>"
+      - "<!i><color:#A0A0A0>对象: <color:#FFD866><partner>"
+      - "<!i><color:#A0A0A0>亲密度: <color:#6BFF95><affinity>"
+      - "<!i><color:#A0A0A0>日期: <color:#E6E6E6><date>"
+      - "<!i><color:#A0A0A0>等级: <color:#E6E6E6><level_display>"
 
   # 不同类型的特殊配置 (覆盖默认)
   types:
     marriage:
       header-item:
         material: 'STONE'
-        name: "<display> <color:#FF8FB1>(❤)"
+        name: "<display>"
         lore:
-          - "<color:#A0A0A0>当前: <color:#6EC6FF><current><color:#5A5A5A>/<color:#AEEFFF><max>"
+          - "<!i><color:#A0A0A0>当前: <color:#6EC6FF><current><color:#5A5A5A>/<color:#AEEFFF><max>"
     brother:
       header-item:
         material: IRON_SWORD
         name: "<display>"
         lore:
-          - "<color:#A0A0A0>当前: <color:#6EC6FF><current><color:#5A5A5A>/<color:#AEEFFF><max>"
+          - "<!i><color:#A0A0A0>当前: <color:#6EC6FF><current><color:#5A5A5A>/<color:#AEEFFF><max>"
     sister:
       header-item:
         material: CAKE
         name: "<display>"
         lore:
-          - "<color:#A0A0A0>当前: <color:#6EC6FF><current><color:#5A5A5A>/<color:#AEEFFF><max>"
+          - "<!i><color:#A0A0A0>当前: <color:#6EC6FF><current><color:#5A5A5A>/<color:#AEEFFF><max>"
     best_friend:
       header-item:
         material: DIAMOND
         name: "<display>"
         lore:
-          - "<color:#A0A0A0>当前: <color:#6EC6FF><current><color:#5A5A5A>/<color:#AEEFFF><max>"
+          - "<!i><color:#A0A0A0>当前: <color:#6EC6FF><current><color:#5A5A5A>/<color:#AEEFFF><max>"
     mentor:
       header-item:
         material: EXPERIENCE_BOTTLE
         name: "<display>"
         lore:
-          - "<color:#A0A0A0>当前: <color:#6EC6FF><current><color:#5A5A5A>/<color:#AEEFFF><max>"
+          - "<!i><color:#A0A0A0>当前: <color:#6EC6FF><current><color:#5A5A5A>/<color:#AEEFFF><max>"

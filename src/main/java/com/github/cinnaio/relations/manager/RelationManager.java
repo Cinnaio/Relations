@@ -525,7 +525,7 @@ public class RelationManager {
                 placeholders.put("<partner>", player2 != null ? player2.getName() : "Unknown");
                 placeholders.put("<level>", String.valueOf(i));
                 placeholders.put("<type>", plugin.getConfigManager().getRelationDisplay(type));
-                plugin.getActionManager().executeActions(player1, actions, placeholders);
+                plugin.getActionManager().executeActions(actions, player1, placeholders);
             }
             
             // Execute for P2
@@ -535,7 +535,7 @@ public class RelationManager {
                 placeholders.put("<partner>", player1 != null ? player1.getName() : "Unknown");
                 placeholders.put("<level>", String.valueOf(i));
                 placeholders.put("<type>", plugin.getConfigManager().getRelationDisplay(type));
-                plugin.getActionManager().executeActions(player2, actions, placeholders);
+                plugin.getActionManager().executeActions(actions, player2, placeholders);
             }
         }
     }

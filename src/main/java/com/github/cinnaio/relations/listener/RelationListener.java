@@ -1,5 +1,7 @@
 package com.github.cinnaio.relations.listener;
 
+import java.util.List;
+import java.util.ArrayList;
 import com.github.cinnaio.relations.Relations;
 import com.github.cinnaio.relations.manager.AffinityItemManager;
 import com.github.cinnaio.relations.manager.RelationManager;
@@ -32,14 +34,25 @@ public class RelationListener implements Listener {
     }
 
     @EventHandler
-    public void onAffinityItemUse(PlayerInteractEntityEvent event) {
+    public void onPlayerInteractEntity(PlayerInteractEntityEvent event) {
         if (event.getHand() != EquipmentSlot.HAND) return;
         if (!(event.getRightClicked() instanceof Player)) return;
 
         Player player = event.getPlayer();
         Player target = (Player) event.getRightClicked();
-        ItemStack item = player.getInventory().getItemInMainHand();
         
+        // 1. Quick Relation GUI Trigger
+        org.bukkit.configuration.file.FileConfiguration quickConfig = plugin.getConfigManager().getQuickMenuConfig();
+        if (quickConfig != null && quickConfig.getBoolean("trigger.enable", true)) {
+             boolean needsSneak = quickConfig.getBoolean("trigger.sneak", true);
+             if (!needsSneak || player.isSneaking()) {
+                 plugin.getGuiManager().openQuickRelationGui(player, target);
+                 return;
+             }
+        }
+
+        // 2. Affinity Items Logic
+        ItemStack item = player.getInventory().getItemInMainHand();
         AffinityItemManager itemManager = plugin.getAffinityItemManager();
         String type = itemManager.getAffinityType(item);
         
@@ -115,6 +128,9 @@ public class RelationListener implements Listener {
             
             // Handle multiple actions (separated by ;)
             String[] actions = action.split(";");
+            List<String> formattedActions = new ArrayList<>();
+            
+            // Convert old style actions to new format for ActionManager
             for (String act : actions) {
                 act = act.trim();
                 if (act.isEmpty()) continue;
@@ -123,34 +139,14 @@ public class RelationListener implements Listener {
                     plugin.getGuiManager().openRelationsGui(player, currentPage + 1);
                 } else if (act.equalsIgnoreCase("previous_page")) {
                     plugin.getGuiManager().openRelationsGui(player, currentPage - 1);
-                } else if (act.equalsIgnoreCase("close")) {
-                    player.closeInventory();
-                } else if (act.toLowerCase().startsWith("sound:")) {
-                    String[] parts = act.split(":");
-                    if (parts.length > 1) {
-                        // Format: sound: NAME-volume-pitch
-                        String soundData = parts[1].trim();
-                        String[] soundParts = soundData.split("-");
-                        String soundName = soundParts[0];
-                        float vol = 1f;
-                        float pitch = 1f;
-                        if (soundParts.length > 1) vol = Float.parseFloat(soundParts[1]);
-                        if (soundParts.length > 2) pitch = Float.parseFloat(soundParts[2]);
-                        
-                        try {
-                            Sound s = Sound.valueOf(soundName.toUpperCase());
-                            player.playSound(player.getLocation(), s, vol, pitch);
-                        } catch (IllegalArgumentException e) {
-                            // Invalid sound
-                        }
-                    }
-                } else if (act.toLowerCase().startsWith("console:")) {
-                    String cmd = act.substring("console:".length()).trim();
-                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd.replace("<player>", player.getName()));
-                } else if (act.toLowerCase().startsWith("player:")) {
-                    String cmd = act.substring("player:".length()).trim();
-                    player.performCommand(cmd);
+                } else if (act.startsWith("[")) {
+                     // Direct ActionManager format
+                     formattedActions.add(act);
                 }
+            }
+            
+            if (!formattedActions.isEmpty()) {
+                plugin.getActionManager().executeActions(formattedActions, player, null);
             }
         }
     }

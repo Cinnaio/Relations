@@ -18,13 +18,13 @@ import java.util.regex.Pattern;
 public class ActionManager {
 
     private final Relations plugin;
-    private static final Pattern ACTION_PATTERN = Pattern.compile("^\\[(op|player|console|message|broadcast|title|potion)]\\s*(.*)$", Pattern.CASE_INSENSITIVE);
+    private static final Pattern ACTION_PATTERN = Pattern.compile("^\\[(op|player|console|message|broadcast|title|potion|close)]\\s*(.*)$", Pattern.CASE_INSENSITIVE);
 
     public ActionManager(Relations plugin) {
         this.plugin = plugin;
     }
 
-    public void executeActions(Player player, List<String> actions, Map<String, String> placeholders) {
+    public void executeActions(List<String> actions, Player player, Map<String, String> placeholders) {
         if (player == null || actions == null || actions.isEmpty()) return;
 
         for (String actionLine : actions) {
@@ -73,6 +73,9 @@ public class ActionManager {
                 break;
             case "potion":
                 handlePotion(player, content);
+                break;
+            case "close":
+                player.closeInventory();
                 break;
         }
     }

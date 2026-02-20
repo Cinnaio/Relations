@@ -40,6 +40,93 @@ public class GuiManager {
         }
     }
 
+    public void openQuickRelationGui(Player player, Player target) {
+        FileConfiguration quickConfig = plugin.getConfigManager().getQuickMenuConfig();
+        if (quickConfig == null) {
+             player.sendMessage(Component.text("Quick Menu configuration not found!", net.kyori.adventure.text.format.NamedTextColor.RED));
+             return;
+        }
+
+        String titleRaw = quickConfig.getString("title", "Interact with <target>");
+        titleRaw = titleRaw.replace("<target>", target.getName());
+        String title = plugin.getConfigManager().processColorCodes(titleRaw);
+        int size = quickConfig.getInt("size", 27);
+        
+        Inventory inv = Bukkit.createInventory(new RelationsHolder(0), size, MiniMessage.miniMessage().deserialize(title));
+        
+        // 1. Static Mappings (Border)
+        ConfigurationSection mappings = quickConfig.getConfigurationSection("mappings");
+        if (mappings != null) {
+             for (String key : mappings.getKeys(false)) {
+                 ConfigurationSection itemSec = mappings.getConfigurationSection(key);
+                 if (itemSec == null) continue;
+                 ItemStack item = buildItem(itemSec, null, null);
+                 
+                 List<String> sorts = itemSec.getStringList("sorts");
+                 // Support single string/int if not list
+                 if (sorts.isEmpty() && itemSec.contains("sorts")) {
+                     Object obj = itemSec.get("sorts");
+                     if (obj instanceof List) {
+                        for (Object o : (List<?>) obj) sorts.add(o.toString());
+                     } else if (obj != null) {
+                        sorts.add(obj.toString());
+                     }
+                 }
+                 
+                 for (String sort : sorts) {
+                     if (sort.contains("-")) {
+                        String[] range = sort.split("-");
+                        if (range.length == 2) {
+                            try {
+                                int start = Integer.parseInt(range[0].trim());
+                                int end = Integer.parseInt(range[1].trim());
+                                for (int i = start; i <= end; i++) {
+                                    if (i >= 0 && i < size) inv.setItem(i, item);
+                                }
+                            } catch (NumberFormatException ignored) {}
+                        }
+                     } else {
+                         try {
+                            int slot = Integer.parseInt(sort.trim());
+                            if (slot >= 0 && slot < size) inv.setItem(slot, item);
+                         } catch (NumberFormatException ignored) {}
+                     }
+                 }
+             }
+        }
+        
+        // 2. Interaction Items
+        ConfigurationSection items = quickConfig.getConfigurationSection("items");
+        if (items != null) {
+            Map<String, String> placeholders = new HashMap<>();
+            placeholders.put("<target>", target.getName());
+            
+            for (String key : items.getKeys(false)) {
+                ConfigurationSection itemSec = items.getConfigurationSection(key);
+                if (itemSec == null) continue;
+                
+                ItemStack item = buildItem(itemSec, placeholders, target); 
+                
+                // Add action
+                // Support new 'actions' list
+                List<String> actionList = itemSec.getStringList("actions");
+                
+                if (!actionList.isEmpty()) {
+                    String combinedActions = String.join(";", actionList);
+                    combinedActions = combinedActions.replace("<target>", target.getName());
+                    addPDCAction(item, combinedActions);
+                }
+                
+                int slot = itemSec.getInt("slot", -1);
+                if (slot >= 0 && slot < size) {
+                    inv.setItem(slot, item);
+                }
+            }
+        }
+        
+        player.openInventory(inv);
+    }
+
     public void openRelationsGui(Player player, int page) {
         FileConfiguration menuConfig = plugin.getConfigManager().getMenuConfig();
         if (menuConfig == null) {
@@ -49,94 +136,126 @@ public class GuiManager {
 
         String title = plugin.getConfigManager().processColorCodes(menuConfig.getString("title", "Relations"));
         title = title.replace("<page>", String.valueOf(page));
-        int size = menuConfig.getInt("size", 54);
+        int size = 54;
         
         Inventory inv = Bukkit.createInventory(new RelationsHolder(page), size, MiniMessage.miniMessage().deserialize(title));
 
-        // Layout Support
-        List<Integer> relationSlots = new ArrayList<>();
-        Map<Integer, ItemStack> staticItems = new HashMap<>();
+        // 1. Build Static Mappings (Border, Buttons, etc.)
+        ConfigurationSection mappings = menuConfig.getConfigurationSection("mappings");
+        Set<Integer> occupiedSlots = new HashSet<>();
+        ItemStack borderFallback = new ItemStack(Material.GRAY_STAINED_GLASS_PANE); // Default
         
-        if (menuConfig.contains("Layout")) {
-            parseLayout(menuConfig, size, relationSlots, staticItems, player, page);
-        } else {
-            // Legacy/Default Mode
-            // Load valid slots for relations
-            ConfigurationSection relConfig = menuConfig.getConfigurationSection("relations");
-            if (relConfig != null) {
-                List<Integer> configSlots = relConfig.getIntegerList("slots");
-                if (!configSlots.isEmpty()) {
-                    relationSlots.addAll(configSlots);
-                } else {
-                    int start = relConfig.getInt("start-slot", 0);
-                    int end = relConfig.getInt("end-slot", size - 1);
-                    for (int i = start; i <= end; i++) {
-                        relationSlots.add(i);
-                    }
-                }
+        if (mappings != null) {
+            // First pass: find border item
+            if (mappings.contains("border")) {
+                 borderFallback = buildItem(mappings.getConfigurationSection("border"), null, null);
             }
-            
-            // Static Items
-            ConfigurationSection itemsSection = menuConfig.getConfigurationSection("items");
-            if (itemsSection != null) {
-                for (String key : itemsSection.getKeys(false)) {
-                    ConfigurationSection itemSec = itemsSection.getConfigurationSection(key);
-                    if (itemSec == null) continue;
-                    
-                    ItemStack item = buildItem(itemSec, null, null);
-                    // Add PDC action if present
-                    if (itemSec.contains("action")) {
-                        String action = itemSec.getString("action");
-                        org.bukkit.inventory.meta.ItemMeta meta = item.getItemMeta();
-                        meta.getPersistentDataContainer().set(new NamespacedKey(plugin, "action"), PersistentDataType.STRING, action);
-                        item.setItemMeta(meta);
-                    }
-                    // Support new actions format in legacy items too if needed?
-                    // For now keeping legacy behavior strict for legacy config.
-                    
-                    List<Integer> slots = itemSec.getIntegerList("slots");
-                    for (int slot : slots) {
-                        if (slot >= 0 && slot < size) {
-                            staticItems.put(slot, item);
+
+            for (String key : mappings.getKeys(false)) {
+                ConfigurationSection itemSec = mappings.getConfigurationSection(key);
+                if (itemSec == null) continue;
+                
+                ItemStack item = buildItem(itemSec, null, null);
+                
+                // Add actions for known keys
+                if (key.equalsIgnoreCase("button_previous")) {
+                    addPDCAction(item, "previous_page");
+                } else if (key.equalsIgnoreCase("button_next")) {
+                    addPDCAction(item, "next_page");
+                } else if (key.equalsIgnoreCase("button_close")) {
+                    addPDCAction(item, "close");
+                }
+                
+                // Parse Sorts
+                List<String> sorts = itemSec.getStringList("sorts");
+                // Support single string if not list
+                if (sorts.isEmpty() && itemSec.contains("sorts")) {
+                    // Try parsing as single string or list of integers directly?
+                    // Bukkit handles list of integers as List<?> or List<Integer>
+                    List<?> rawList = itemSec.getList("sorts");
+                    if (rawList != null) {
+                        for (Object obj : rawList) {
+                            sorts.add(obj.toString());
                         }
+                    } else {
+                         sorts.add(itemSec.getString("sorts"));
+                    }
+                }
+
+                for (String sort : sorts) {
+                    if (sort.contains("-")) {
+                        String[] range = sort.split("-");
+                        if (range.length == 2) {
+                            try {
+                                int start = Integer.parseInt(range[0].trim());
+                                int end = Integer.parseInt(range[1].trim());
+                                for (int i = start; i <= end; i++) {
+                                    if (i >= 0 && i < size) {
+                                        inv.setItem(i, item);
+                                        occupiedSlots.add(i);
+                                    }
+                                }
+                            } catch (NumberFormatException ignored) {}
+                        }
+                    } else {
+                        try {
+                            int slot = Integer.parseInt(sort.trim());
+                            if (slot >= 0 && slot < size) {
+                                inv.setItem(slot, item);
+                                occupiedSlots.add(slot);
+                            }
+                        } catch (NumberFormatException ignored) {}
                     }
                 }
             }
         }
 
-        // Apply Static Items
-        for (Map.Entry<Integer, ItemStack> entry : staticItems.entrySet()) {
-            inv.setItem(entry.getKey(), entry.getValue());
+        // 2. Prepare Relations Content
+        // Identify available rows for layout flow
+        // We scan row by row. If a row has ANY available slot, we consider it a candidate row?
+        // Or we just find the first available slot in a row and start there?
+        // The user wants "Line by Line".
+        
+        List<List<Integer>> availableRows = new ArrayList<>();
+        for (int r = 0; r < 6; r++) {
+            List<Integer> rowSlots = new ArrayList<>();
+            for (int c = 0; c < 9; c++) {
+                int slot = r * 9 + c;
+                if (!occupiedSlots.contains(slot)) {
+                    rowSlots.add(slot);
+                }
+            }
+            if (!rowSlots.isEmpty()) {
+                availableRows.add(rowSlots);
+            }
         }
         
-        // Render Relations
-        ConfigurationSection relConfig = menuConfig.getConfigurationSection("relations");
-        boolean lineBreak = relConfig != null && relConfig.getBoolean("line-break", true);
-        int itemsPerPage = relationSlots.size();
+        if (availableRows.isEmpty()) {
+            player.openInventory(inv);
+            return;
+        }
 
-        // 1. Prepare items to render (Virtual List)
-        // ... (Existing logic for relations rendering)
-        List<ItemStack> virtualItems = new ArrayList<>();
-        List<String> types = plugin.getConfigManager().getRelationTypes().stream().toList();
+        List<String> types = new ArrayList<>(plugin.getConfigManager().getRelationTypes());
         List<Relation> relations = plugin.getRelationManager().getRelations(player.getUniqueId());
+        ConfigurationSection relConfig = menuConfig.getConfigurationSection("relations");
         
-        Map<Integer, ItemStack> pageItems = new HashMap<>();
-        int globalIndex = 0; 
+        // Content Items to be placed
+        List<List<ItemStack>> flowLines = new ArrayList<>();
         
         for (String type : types) {
-             // ... (Existing logic stats)
-            int current = 0;
-            List<Relation> typeRelations = new ArrayList<>();
-            for (Relation r : relations) {
-                if (r.getType().equalsIgnoreCase(type)) {
-                    current++;
-                    typeRelations.add(r);
-                }
-            }
-            int max = plugin.getRelationManager().getMaxRelations(player, type);
-
-            // Header
-            if (relConfig != null && relConfig.contains("header-item")) {
+             List<ItemStack> typeItems = new ArrayList<>();
+             int current = 0;
+             List<Relation> typeRelations = new ArrayList<>();
+             for (Relation r : relations) {
+                 if (r.getType().equalsIgnoreCase(type)) {
+                     current++;
+                     typeRelations.add(r);
+                 }
+             }
+             int max = plugin.getRelationManager().getMaxRelations(player, type);
+             
+             // Header
+             if (relConfig != null && relConfig.contains("header-item")) {
                 Map<String, String> placeholders = new HashMap<>();
                 placeholders.put("<display>", plugin.getConfigManager().getRelationDisplay(type));
                 placeholders.put("<current>", String.valueOf(current));
@@ -146,13 +265,11 @@ public class GuiManager {
                 if (relConfig.contains("types." + type + ".header-item")) {
                     headerSection = relConfig.getConfigurationSection("types." + type + ".header-item");
                 }
-                
-                ItemStack header = buildItem(headerSection, placeholders, null);
-                pageItems.put(globalIndex++, header);
-            }
-
-            // Members
-            if (relConfig != null && relConfig.contains("member-item")) {
+                typeItems.add(buildItem(headerSection, placeholders, null));
+             }
+             
+             // Members
+             if (relConfig != null && relConfig.contains("member-item")) {
                 ConfigurationSection memberSection = relConfig.getConfigurationSection("member-item");
                 if (relConfig.contains("types." + type + ".member-item")) {
                      memberSection = relConfig.getConfigurationSection("types." + type + ".member-item");
@@ -175,213 +292,136 @@ public class GuiManager {
                     placeholders.put("<level_display>", plugin.getLevelManager().getLevelDisplay(r.getAffinity()));
                     placeholders.put("<date>", r.getCreatedAt().toString());
 
-                    ItemStack head = buildItem(memberSection, placeholders, partner);
-                    pageItems.put(globalIndex++, head);
+                    typeItems.add(buildItem(memberSection, placeholders, partner));
+                }
+             }
+             
+             if (!typeItems.isEmpty()) {
+                 flowLines.add(typeItems);
+             }
+        }
+        
+        // Paging Logic
+        // We map flowLines to availableRows.
+        // A flowLine can span multiple rows if it's too long.
+        // But a new flowLine MUST start on a new row.
+        
+        List<Map<Integer, ItemStack>> pages = new ArrayList<>();
+        Map<Integer, ItemStack> currentPage = new HashMap<>();
+        
+        int currentRowIndex = 0; // Index in availableRows
+        
+        for (List<ItemStack> lineItems : flowLines) {
+            // Find next available row (if we are in the middle of a row, move to next)
+            // But wait, "currentRowIndex" tracks the current row being filled.
+            // If we just finished a line, we increment row index?
+            // "One type per line" -> Start new type on new row.
+            // So for each type (lineItems), we start at a fresh row.
+            
+            // Check if we need to advance row (if current row is partially filled? No, we always start fresh for new type)
+            // Actually, we need to track if the previous type used the current row.
+            // Let's say we are at start of logic: currentRowIndex = 0.
+            // Place items.
+            // If items overflow row, move to next row.
+            // After items done, increment currentRowIndex to start next type on fresh row.
+            
+            // BUT: if we just finished a page, we reset currentRowIndex to 0 for new page.
+            
+            if (currentRowIndex >= availableRows.size()) {
+                // Page full, push and reset
+                pages.add(new HashMap<>(currentPage));
+                currentPage.clear();
+                currentRowIndex = 0;
+            }
+            
+            List<Integer> currentRowSlots = availableRows.get(currentRowIndex);
+            int currentSlotInRow = 0;
+            
+            for (ItemStack item : lineItems) {
+                if (currentSlotInRow >= currentRowSlots.size()) {
+                    // Row full, move to next row
+                    currentRowIndex++;
+                    
+                    if (currentRowIndex >= availableRows.size()) {
+                         // Page full
+                         pages.add(new HashMap<>(currentPage));
+                         currentPage.clear();
+                         currentRowIndex = 0;
+                    }
+                    currentRowSlots = availableRows.get(currentRowIndex);
+                    // Indentation: Skip first slot when wrapping to next row within same type
+                    currentSlotInRow = 1;
+                }
+                
+                if (currentSlotInRow < currentRowSlots.size()) {
+                    int slot = currentRowSlots.get(currentSlotInRow++);
+                    currentPage.put(slot, item);
                 }
             }
             
-            // Line Break Logic (Same as before)
-            if (lineBreak && !relationSlots.isEmpty()) {
-                if (globalIndex > 0) {
-                     int prevVirtualIndex = (globalIndex - 1) % itemsPerPage;
-                     int prevPhysicalSlot = relationSlots.get(prevVirtualIndex);
-                     int prevRow = prevPhysicalSlot / 9;
-                     
-                     int checkIndex = globalIndex;
-                     boolean found = false;
-                     for (int i = 0; i < itemsPerPage; i++) {
-                         int virtualIndex = checkIndex % itemsPerPage;
-                         int physicalSlot = relationSlots.get(virtualIndex);
-                         int row = physicalSlot / 9;
-                         
-                         int pageOfCheck = checkIndex / itemsPerPage;
-                         int pageOfPrev = (globalIndex - 1) / itemsPerPage;
-                         
-                         if (pageOfCheck > pageOfPrev) {
-                             globalIndex = checkIndex;
-                             found = true;
-                             break;
-                         }
-                         
-                         if (row > prevRow) {
-                             globalIndex = checkIndex;
-                             found = true;
-                             break;
-                         }
-                         checkIndex++;
-                     }
-                }
-            }
+            // Finished type, force new row for next type
+            currentRowIndex++;
         }
         
-        // Determine Max Pages
-        int totalItems = globalIndex;
-        int totalPages = (totalItems > 0) ? (int) Math.ceil((double) totalItems / itemsPerPage) : 1;
+        if (!currentPage.isEmpty()) {
+            pages.add(currentPage);
+        }
+        
+        // Render Page
+        int totalPages = pages.size();
         if (page > totalPages) page = totalPages;
         if (page < 1) page = 1;
         
-        // Handle Prev/Next buttons visibility if they are static items in Layout
-        // In Layout mode, static items are already in 'staticItems' map.
-        // We need to hide them if not needed? 
-        // TrMenu usually handles this by having different icons or conditional icons.
-        // For simplicity, we assume Layout defines them and they are always there, 
-        // OR we check for "action" in static items and hide if invalid page.
-        // But let's stick to standard behavior: if the item is there, it's there.
-        // However, if we use the old logic's "items" section, we have logic for hiding.
-        // In Layout mode, we should check actions.
-        
-        if (menuConfig.contains("Layout")) {
-            // Post-process static items for page navigation visibility
-            Iterator<Map.Entry<Integer, ItemStack>> it = staticItems.entrySet().iterator();
-            while (it.hasNext()) {
-                Map.Entry<Integer, ItemStack> entry = it.next();
-                ItemStack item = entry.getValue();
-                if (item == null || item.getItemMeta() == null) continue;
-                String action = item.getItemMeta().getPersistentDataContainer().get(new NamespacedKey(plugin, "action"), PersistentDataType.STRING);
-                if (action != null) {
-                    if (action.contains("previous_page") && page <= 1) {
-                         inv.setItem(entry.getKey(), new ItemStack(Material.AIR)); // Remove from inventory
-                         // We don't remove from map as map is local var
-                    } else if (action.contains("next_page") && page >= totalPages) {
-                         inv.setItem(entry.getKey(), new ItemStack(Material.AIR));
-                    }
-                }
+        if (totalPages > 0) {
+            Map<Integer, ItemStack> pageContent = pages.get(page - 1);
+            for (Map.Entry<Integer, ItemStack> entry : pageContent.entrySet()) {
+                inv.setItem(entry.getKey(), entry.getValue());
             }
         }
-
-        // Fill Relations
-        int startIndex = (page - 1) * itemsPerPage;
-        int endIndex = Math.min(startIndex + itemsPerPage, totalItems);
         
-        for (int i = startIndex; i < endIndex; i++) {
-            ItemStack item = pageItems.get(i);
-            if (item != null) {
-                int virtualIndex = i % itemsPerPage;
-                int physicalSlot = relationSlots.get(virtualIndex);
-                inv.setItem(physicalSlot, item);
-            }
+        // Update Buttons Visibility (if they are in static items, we might need to hide/show them)
+        // Since we placed them via mappings, they are already there.
+        // But we should hide P if page 1, N if page last.
+        // We need to find their slots again?
+        // Or check occupiedSlots?
+        // Better: check config mappings again for buttons and update slots.
+        if (mappings != null) {
+             if (mappings.contains("button_previous") && page <= 1) {
+                 replaceButton(inv, mappings.getConfigurationSection("button_previous"), borderFallback);
+             }
+             if (mappings.contains("button_next") && page >= totalPages) {
+                 replaceButton(inv, mappings.getConfigurationSection("button_next"), borderFallback);
+             }
         }
 
         player.openInventory(inv);
     }
-
-    private void parseLayout(FileConfiguration config, int size, List<Integer> relationSlots, Map<Integer, ItemStack> staticItems, Player player, int page) {
-        List<?> layoutList = config.getList("Layout");
-        if (layoutList == null) return;
-        
-        List<String> rows = new ArrayList<>();
-        
-        // Detect layout type: Single Page (List<String>) or Multi Page (List<List<String>>)
-        boolean isMultiPage = false;
-        if (!layoutList.isEmpty() && layoutList.get(0) instanceof List) {
-            isMultiPage = true;
+    
+    private void replaceButton(Inventory inv, ConfigurationSection sec, ItemStack replacement) {
+        if (sec == null) return;
+        List<String> sorts = sec.getStringList("sorts");
+        if (sorts.isEmpty()) {
+             Object obj = sec.get("sorts");
+             if (obj != null) sorts.add(obj.toString());
         }
-
-        if (isMultiPage) {
-            // Get layout for specific page
-            int index = page - 1;
-            if (index < 0) index = 0;
-            
-            // If page exceeds defined layouts, use the last one
-            if (index >= layoutList.size()) {
-                index = layoutList.size() - 1;
-            }
-            
-            Object pageLayoutObj = layoutList.get(index);
-            if (pageLayoutObj instanceof List) {
-                for (Object sub : (List<?>) pageLayoutObj) {
-                    rows.add(sub.toString());
-                }
-            }
-        } else {
-            // Legacy/Single Page Mode: Flatten everything
-            for (Object obj : layoutList) {
-                if (obj instanceof List) {
-                    for (Object sub : (List<?>) obj) {
-                        rows.add(sub.toString());
-                    }
-                } else {
-                    rows.add(obj.toString());
-                }
-            }
-        }
-        
-        ConfigurationSection icons = config.getConfigurationSection("Icons");
-        // Identify relation char: defaults to '+' if not defined in relations.layout-char
-        String relChar = config.getString("relations.layout-char", "+");
-        
-        int slot = 0;
-        for (String row : rows) {
-            // Assume simple char grid for now, or space separated?
-            // TrMenu usually 1 char = 1 slot.
-            // If the string length > 9, maybe it's space separated?
-            // User example: '#   A   #' (9 chars)
-            // User example: '# `B1``A1``D2` #' -> this is tricky.
-            // Let's assume standard char grid (9 chars per row) first. 
-            // If row length > 9, we might try to split by whitespace if it looks like keys.
-            
-            // Standardizing: if row length <= 9, treat as chars.
-            // If row length > 9, split by space? 
-            // The user's example '# `B1``A1``D2` #' has backticks. Maybe they mean specific keys.
-            // Let's try to be smart:
-            String[] keys;
-            if (row.length() <= 9) {
-                keys = row.split("");
-            } else {
-                // Try splitting by space, but handle " " as a key?
-                // Actually, let's just use chars if it matches the grid size exactly (ignoring spaces?).
-                // Let's support space-separated keys if it contains spaces and length > 9.
-                keys = row.trim().split("\\s+");
-                if (keys.length > 9) {
-                     // Fallback to chars if split fails?
-                     keys = row.split("");
-                }
-            }
-            
-            for (String key : keys) {
-                if (slot >= size) break;
-                
-                if (key.equals(relChar)) {
-                    relationSlots.add(slot);
-                } else if (icons != null && icons.contains(key)) {
-                    ConfigurationSection iconSec = icons.getConfigurationSection(key);
-                    if (iconSec != null) {
-                         // Check for display section (TrMenu style)
-                         if (iconSec.contains("display")) {
-                             iconSec = iconSec.getConfigurationSection("display");
-                         }
-                         
-                         ItemStack item = buildItem(iconSec, null, player);
-                         
-                         // Actions
-                         // Check parent section for actions
-                         ConfigurationSection parentSec = icons.getConfigurationSection(key);
-                         if (parentSec.contains("actions")) {
-                             ConfigurationSection actions = parentSec.getConfigurationSection("actions");
-                             if (actions != null && actions.contains("all")) {
-                                 Object allAction = actions.get("all");
-                                 String actionStr = "";
-                                 if (allAction instanceof List) {
-                                     actionStr = String.join(";", (List<String>) allAction);
-                                 } else {
-                                     actionStr = allAction.toString();
-                                 }
-                                 
-                                 org.bukkit.inventory.meta.ItemMeta meta = item.getItemMeta();
-                                 meta.getPersistentDataContainer().set(new NamespacedKey(plugin, "action"), PersistentDataType.STRING, actionStr);
-                                 item.setItemMeta(meta);
-                             }
-                         }
-                         
-                         staticItems.put(slot, item);
-                    }
-                } else {
-                    // Empty or Unknown
-                }
-                slot++;
-            }
+        for (String sort : sorts) {
+            try {
+                int slot = Integer.parseInt(sort.trim());
+                inv.setItem(slot, replacement);
+            } catch (NumberFormatException ignored) {}
         }
     }
+
+    
+    private void addPDCAction(ItemStack item, String action) {
+        if (item == null || item.getType() == Material.AIR) return;
+        item.editMeta(meta -> {
+            meta.getPersistentDataContainer().set(new NamespacedKey(plugin, "action"), PersistentDataType.STRING, action);
+        });
+    }
+
+    // Removed parseLayout method as it is no longer used
+
 
     private ItemStack buildItem(ConfigurationSection section, Map<String, String> placeholders, OfflinePlayer skullOwner) {
         if (section == null) return new ItemStack(Material.AIR);
@@ -416,6 +456,16 @@ public class GuiManager {
                 name = name.replace(entry.getKey(), entry.getValue());
             }
         }
+        
+        // Handle <partner> specifically if not already handled
+        if (name.contains("<partner>")) {
+             String partnerName = "Unknown";
+             if (placeholders != null && placeholders.containsKey("<player>")) {
+                 partnerName = placeholders.get("<player>"); // In member context, <player> IS the partner
+             }
+             name = name.replace("<partner>", partnerName);
+        }
+        
         name = plugin.getConfigManager().processColorCodes(name);
         String finalName = name;
 
@@ -428,6 +478,16 @@ public class GuiManager {
                     line = line.replace(entry.getKey(), entry.getValue());
                 }
             }
+            
+            // Handle <partner> specifically if not already handled
+            if (line.contains("<partner>")) {
+                 String partnerName = "Unknown";
+                 if (placeholders != null && placeholders.containsKey("<player>")) {
+                     partnerName = placeholders.get("<player>");
+                 }
+                 line = line.replace("<partner>", partnerName);
+            }
+            
             line = plugin.getConfigManager().processColorCodes(line);
             loreComponents.add(MiniMessage.miniMessage().deserialize(line));
         }
