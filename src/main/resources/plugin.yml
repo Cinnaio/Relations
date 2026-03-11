@@ -31,4 +31,4 @@ permissions:
     default: op
   relations.command.marry.list:
     description: Permission to use /rel marry list
-    default: true
+    default: op

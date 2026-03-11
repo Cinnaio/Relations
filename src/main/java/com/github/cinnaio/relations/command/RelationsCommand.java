@@ -43,10 +43,6 @@ public class RelationsCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        if (!(sender instanceof Player)) {
-            sender.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("player-only", null)));
-            return true;
-        }
         Player player = (Player) sender;
 
         if (args.length == 0) {
@@ -167,16 +163,6 @@ public class RelationsCommand implements CommandExecutor, TabCompleter {
                 }
                 handleSave(player, args);
                 break;
-            case "reload":
-                if (!player.hasPermission("relations.admin")) {
-                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-permission", player)));
-                    return true;
-                }
-                plugin.getGuiManager().closeAllMenus();
-                plugin.getConfigManager().reload();
-                plugin.getAffinityItemManager().loadItems();
-                player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("reload-success", player)));
-                break;
             case "lang":
                 // New command to set player language manually if locale detection fails or player wants to override
                 // Usage: /rel lang <lang_code>
@@ -267,10 +253,14 @@ public class RelationsCommand implements CommandExecutor, TabCompleter {
         player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("help.gender", player)));
         player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("help.top", player)));
         player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("help.request", player)));
-        player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("help.accept", player)));
-        player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("help.deny", player)));
         player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("help.remove", player)));
-        player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("help.marry", player)));
+        boolean anyMarriageFeature = plugin.getConfigManager().isMarriageFeatureEnabled("home")
+                || plugin.getConfigManager().isMarriageFeatureEnabled("gift")
+                || plugin.getConfigManager().isMarriageFeatureEnabled("tp")
+                || plugin.getConfigManager().isMarriageFeatureEnabled("kiss");
+        if (anyMarriageFeature) {
+            player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("help.marry", player)));
+        }
         if (player.hasPermission("relations.admin.save")) {
             player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("help.save", player)));
         }
@@ -355,6 +345,10 @@ public class RelationsCommand implements CommandExecutor, TabCompleter {
                     player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-permission", player)));
                     return;
                 }
+                if (!plugin.getConfigManager().isMarriageFeatureEnabled("home")) {
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("feature-disabled", player)));
+                    return;
+                }
                 relationManager.setHome(player);
                 break;
             case "home":
@@ -362,11 +356,19 @@ public class RelationsCommand implements CommandExecutor, TabCompleter {
                     player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-permission", player)));
                     return;
                 }
+                if (!plugin.getConfigManager().isMarriageFeatureEnabled("home")) {
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("feature-disabled", player)));
+                    return;
+                }
                 relationManager.teleportHome(player);
                 break;
             case "gift":
                 if (!player.hasPermission("relations.command.marry.gift")) {
                     player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-permission", player)));
+                    return;
+                }
+                if (!plugin.getConfigManager().isMarriageFeatureEnabled("gift")) {
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("feature-disabled", player)));
                     return;
                 }
                 ItemStack item = player.getInventory().getItemInMainHand();
@@ -392,6 +394,10 @@ public class RelationsCommand implements CommandExecutor, TabCompleter {
             case "tp":
                 if (!player.hasPermission("relations.command.marry.tp")) {
                     player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-permission", player)));
+                    return;
+                }
+                if (!plugin.getConfigManager().isMarriageFeatureEnabled("tp")) {
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("feature-disabled", player)));
                     return;
                 }
                 UUID pid = marriage.getPartner(player.getUniqueId());
@@ -591,8 +597,6 @@ public class RelationsCommand implements CommandExecutor, TabCompleter {
             completions.add("gui");
             completions.add("list");
             completions.add("request");
-            completions.add("accept");
-            completions.add("deny");
             completions.add("remove");
             completions.add("gender");
             completions.add("top");
@@ -602,7 +606,6 @@ public class RelationsCommand implements CommandExecutor, TabCompleter {
             }
             if (sender.hasPermission("relations.admin")) {
                 completions.add("admin");
-                completions.add("reload");
             }
         } else if (args.length == 2) {
             if (args[0].equalsIgnoreCase("gender")) {
@@ -618,14 +621,14 @@ public class RelationsCommand implements CommandExecutor, TabCompleter {
                     completions.addAll(plugin.getConfigManager().getRelationTypes());
                 }
             }
-            if (args[0].equalsIgnoreCase("request") || args[0].equalsIgnoreCase("accept") || args[0].equalsIgnoreCase("deny") || args[0].equalsIgnoreCase("remove")) {
+            if (args[0].equalsIgnoreCase("request") || args[0].equalsIgnoreCase("remove")) {
                 return null; // Player list
             }
             if (args[0].equalsIgnoreCase("marry")) {
-                if (sender.hasPermission("relations.command.marry.sethome")) completions.add("sethome");
-                if (sender.hasPermission("relations.command.marry.home")) completions.add("home");
-                if (sender.hasPermission("relations.command.marry.gift")) completions.add("gift");
-                if (sender.hasPermission("relations.command.marry.tp")) completions.add("tp");
+                if (sender.hasPermission("relations.command.marry.sethome") && plugin.getConfigManager().isMarriageFeatureEnabled("home")) completions.add("sethome");
+                if (sender.hasPermission("relations.command.marry.home") && plugin.getConfigManager().isMarriageFeatureEnabled("home")) completions.add("home");
+                if (sender.hasPermission("relations.command.marry.gift") && plugin.getConfigManager().isMarriageFeatureEnabled("gift")) completions.add("gift");
+                if (sender.hasPermission("relations.command.marry.tp") && plugin.getConfigManager().isMarriageFeatureEnabled("tp")) completions.add("tp");
                 if (sender.hasPermission("relations.command.marry.list")) completions.add("list");
             }
             if (args[0].equalsIgnoreCase("admin")) {

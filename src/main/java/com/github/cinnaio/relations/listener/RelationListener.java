@@ -155,6 +155,7 @@ public class RelationListener implements Listener {
     public void onKiss(PlayerInteractEntityEvent event) {
         if (event.getHand() != EquipmentSlot.HAND) return;
         if (!(event.getRightClicked() instanceof Player)) return;
+        if (!plugin.getConfigManager().isMarriageFeatureEnabled("kiss")) return;
         
         Player player = event.getPlayer();
         if (!player.isSneaking()) return;

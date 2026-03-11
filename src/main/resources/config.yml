@@ -1,3 +1,8 @@
+settings:
+  default-lang: zh_cn
+
+debug: false
+
 database:
   # 选项: SQLITE, MYSQL
   type: SQLITE
@@ -8,10 +13,6 @@ database:
   password: ""
   ssl: false
   pool-size: 10
-
-settings:
-  default-lang: zh_cn
-
 
 levels:
   1: 0
@@ -54,5 +55,3 @@ relations:
     display: "<!i><color:#AEEFFF><bold>导师"
     max: 1
     daily-affinity-limit: 1000
-
-debug: false

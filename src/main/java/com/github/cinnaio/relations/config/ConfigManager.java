@@ -154,6 +154,16 @@ public class ConfigManager {
         // Actually, let's check config features if I want to be generic later.
         // But prompt says "Marriage module must support...", implying it's a specific type.
     }
+    
+    public boolean isFeatureEnabled(String relationType, String feature) {
+        ConfigurationSection sec = config.getConfigurationSection("relations." + relationType + ".features");
+        if (sec == null) return true;
+        return sec.getBoolean(feature, true);
+    }
+    
+    public boolean isMarriageFeatureEnabled(String feature) {
+        return isFeatureEnabled("marriage", feature);
+    }
 
     public boolean isDebug() {
         return config.getBoolean("debug", false);
