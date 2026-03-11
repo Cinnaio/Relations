@@ -130,7 +130,7 @@ public class GuiManager {
     public void openRelationsGui(Player player, int page) {
         FileConfiguration menuConfig = plugin.getConfigManager().getMenuConfig();
         if (menuConfig == null) {
-            player.sendMessage(Component.text("Menu configuration not found!", net.kyori.adventure.text.format.NamedTextColor.RED));
+            player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("errors.config-not-found", player)));
             return;
         }
 

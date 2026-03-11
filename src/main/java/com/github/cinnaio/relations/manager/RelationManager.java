@@ -87,11 +87,11 @@ public class RelationManager {
 
     public void sendRequest(Player sender, Player target, String type) {
         if (sender.getUniqueId().equals(target.getUniqueId())) {
-             sender.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("relation.cannot-relate-self")));
+             sender.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("relation.cannot-relate-self", sender)));
              return;
         }
         if (areRelated(sender.getUniqueId(), target.getUniqueId())) {
-             sender.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("relation.already-related")));
+             sender.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("relation.already-related", sender)));
              return;
         }
         
@@ -99,7 +99,7 @@ public class RelationManager {
         int senderMax = getMaxRelations(sender, type);
         int senderCurrent = countRelations(sender.getUniqueId(), type);
         if (senderCurrent >= senderMax) {
-            sender.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("relation.limit-reached")));
+            sender.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("relation.limit-reached", sender)));
             return;
         }
         
@@ -107,17 +107,17 @@ public class RelationManager {
         int targetMax = getMaxRelations(target, type);
         int targetCurrent = countRelations(target.getUniqueId(), type);
         if (targetCurrent >= targetMax) {
-             sender.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("target-limit-reached")));
+             sender.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("target-limit-reached", sender)));
              return;
         }
         
         pendingRequests.computeIfAbsent(target.getUniqueId(), k -> new HashMap<>()).put(sender.getUniqueId(), type);
         
-        String reqSent = plugin.getConfigManager().getMessage("relation.request-sent")
+        String reqSent = plugin.getConfigManager().getMessage("relation.request-sent", sender)
                 .replace("<target>", target.getName());
         sender.sendMessage(MiniMessage.miniMessage().deserialize(reqSent));
 
-        String reqRec = plugin.getConfigManager().getMessage("relation.request-received")
+        String reqRec = plugin.getConfigManager().getMessage("relation.request-received", target)
                 .replace("<player>", sender.getName())
                 .replace("<relation>", plugin.getConfigManager().getRelationDisplay(type));
         target.sendMessage(MiniMessage.miniMessage().deserialize(reqRec));
@@ -134,14 +134,14 @@ public class RelationManager {
         int receiverMax = getMaxRelations(receiver, type);
         int receiverCurrent = countRelations(receiver.getUniqueId(), type);
         if (receiverCurrent >= receiverMax) {
-            receiver.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("relation.limit-reached")));
+            receiver.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("relation.limit-reached", receiver)));
             return;
         }
         
         int senderMax = getMaxRelations(sender, type);
         int senderCurrent = countRelations(sender.getUniqueId(), type);
         if (senderCurrent >= senderMax) {
-             receiver.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("sender-limit-reached")));
+             receiver.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("sender-limit-reached", receiver)));
              return;
         }
 
@@ -160,12 +160,12 @@ public class RelationManager {
                 updateCache(sender.getUniqueId());
                 
                 String display = plugin.getConfigManager().getRelationDisplay(type);
-                String msg = plugin.getConfigManager().getMessage("relation.request-accepted")
+                String msg = plugin.getConfigManager().getMessage("relation.request-accepted", receiver)
                         .replace("<relation>", display)
                         .replace("<target>", sender.getName());
                 receiver.sendMessage(MiniMessage.miniMessage().deserialize(msg));
                 
-                String msg2 = plugin.getConfigManager().getMessage("relation.request-accepted")
+                String msg2 = plugin.getConfigManager().getMessage("relation.request-accepted", sender)
                         .replace("<relation>", display)
                         .replace("<target>", receiver.getName());
                 sender.sendMessage(MiniMessage.miniMessage().deserialize(msg2));
@@ -220,10 +220,10 @@ public class RelationManager {
         }
         
         receiver.sendMessage(MiniMessage.miniMessage().deserialize(
-                plugin.getConfigManager().getMessage("relation.request-denied").replace("<target>", sender.getName())
+                plugin.getConfigManager().getMessage("relation.request-denied", receiver).replace("<target>", sender.getName())
         ));
         sender.sendMessage(MiniMessage.miniMessage().deserialize(
-                plugin.getConfigManager().getMessage("relation.request-denied-target").replace("<target>", receiver.getName())
+                plugin.getConfigManager().getMessage("relation.request-denied-target", sender).replace("<target>", receiver.getName())
         ));
     }
 
@@ -461,7 +461,7 @@ public class RelationManager {
             try {
                 relationDAO.updateHome(marriage);
                 SchedulerUtils.runTask(plugin, player, () -> {
-                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("marriage.home-set")));
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("marriage.home-set", player)));
                 });
             } catch (SQLException e) {
                 e.printStackTrace();
@@ -472,12 +472,12 @@ public class RelationManager {
     public void teleportHome(Player player) {
         Relation marriage = getMarriage(player.getUniqueId());
         if (marriage == null || !marriage.hasHome()) {
-             String msg = plugin.getConfigManager().getMessage("marriage.no-home-set");
+             String msg = plugin.getConfigManager().getMessage("marriage.no-home-set", player);
              if (msg == null || msg.isEmpty()) msg = "<color:#FF6B6B>你还没有设置婚姻家园！请使用 /rel marry sethome 设置。</color>";
              player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
              return;
         }
-        player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("marriage.home-teleport")));
+        player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("marriage.home-teleport", player)));
         SchedulerUtils.teleport(player, marriage.getHome());
     }
     

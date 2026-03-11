@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'com.github.cinnaio'
-version = '1.2.5'
+version = '1.2.6'
 
 repositories {
     mavenCentral()
@@ -20,10 +20,9 @@ repositories {
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
-    compileOnly 'me.clip:placeholderapi:2.11.6'
-    
-    implementation 'com.zaxxer:HikariCP:5.1.0'
-    implementation 'com.mysql:mysql-connector-j:8.3.0'
+    compileOnly("me.clip:placeholderapi:2.11.6")
+    compileOnly("com.zaxxer:HikariCP:5.1.0")
+    compileOnly("com.mysql:mysql-connector-j:8.3.0")
 }
 
 tasks {
@@ -57,9 +56,4 @@ processResources {
     filesMatching('plugin.yml') {
         expand props
     }
-}
-
-shadowJar {
-    relocate 'com.zaxxer.hikari', 'com.github.cinnaio.relations.lib.hikari'
-    relocate 'com.mysql', 'com.github.cinnaio.relations.lib.mysql'
 }

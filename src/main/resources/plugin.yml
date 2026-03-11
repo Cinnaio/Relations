@@ -5,14 +5,30 @@ api-version: '1.21'
 authors: [Cinnaio]
 depend: [PlaceholderAPI]
 folia-supported: true
-
 commands:
   relations:
     description: Main command for Relations plugin
     usage: /relations
     aliases: [rel]
-
+libraries:
+  - com.zaxxer:HikariCP:5.1.0
+  - com.mysql:mysql-connector-j:8.3.0
 permissions:
   relations.admin:
     description: Admin permission for relations
     default: op
+  relations.command.marry.tp:
+    description: Permission to use /rel marry tp
+    default: op
+  relations.command.marry.sethome:
+    description: Permission to use /rel marry sethome
+    default: op
+  relations.command.marry.home:
+    description: Permission to use /rel marry home
+    default: op
+  relations.command.marry.gift:
+    description: Permission to use /rel marry gift
+    default: op
+  relations.command.marry.list:
+    description: Permission to use /rel marry list
+    default: true

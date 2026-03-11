@@ -67,11 +67,11 @@ public class RelationListener implements Listener {
                             .filter(rel -> rel.getPartner(player.getUniqueId()).equals(target.getUniqueId()))
                             .map(Relation::getType)
                             .findFirst().orElse("?");
-                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("relation.item-type-mismatch")
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("relation.item-type-mismatch", player)
                             .replace("<type>", type)
                             .replace("<actual>", theirType)));
                 } else {
-                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-relation-found")));
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-relation-found", player)));
                 }
                 return;
             }
@@ -83,15 +83,15 @@ public class RelationListener implements Listener {
             int actualGain = newAffinity - oldAff;
 
             if (actualGain <= 0) {
-                player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("relation.daily-limit-reached")));
+                player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("relation.daily-limit-reached", player)));
                 return;
             }
 
             item.setAmount(item.getAmount() - 1);
-            player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("relation.affinity-item-used")
+            player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("relation.affinity-item-used", player)
                     .replace("<target>", target.getName())
                     .replace("<amount>", String.valueOf(actualGain))));
-            target.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("relation.affinity-item-received")
+            target.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("relation.affinity-item-received", target)
                     .replace("<player>", player.getName())
                     .replace("<amount>", String.valueOf(actualGain))));
         }
@@ -166,8 +166,8 @@ public class RelationListener implements Listener {
             player.getWorld().spawnParticle(Particle.HEART, player.getEyeLocation().add(player.getLocation().getDirection().multiply(0.5)), 5);
             player.getWorld().playSound(player.getLocation(), Sound.ENTITY_VILLAGER_YES, 1f, 1f);
             
-            player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("marriage.kiss").replace("<target>", target.getName())));
-            target.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("marriage.kissed").replace("<target>", player.getName())));
+            player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("marriage.kiss", player).replace("<target>", target.getName())));
+            target.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("marriage.kissed", target).replace("<target>", player.getName())));
         }
     }
 }

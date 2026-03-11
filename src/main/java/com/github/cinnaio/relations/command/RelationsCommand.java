@@ -36,7 +36,7 @@ public class RelationsCommand implements CommandExecutor, TabCompleter {
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
         if (args.length > 0 && args[0].equalsIgnoreCase("admin")) {
             if (!sender.hasPermission("relations.admin")) {
-                sender.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-permission")));
+                sender.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-permission", sender instanceof Player ? (Player) sender : null)));
                 return true;
             }
             handleAdmin(sender, args);
@@ -44,7 +44,7 @@ public class RelationsCommand implements CommandExecutor, TabCompleter {
         }
 
         if (!(sender instanceof Player)) {
-            sender.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("player-only")));
+            sender.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("player-only", null)));
             return true;
         }
         Player player = (Player) sender;
@@ -62,139 +62,147 @@ public class RelationsCommand implements CommandExecutor, TabCompleter {
                 break;
             case "list":
                 if (!player.hasPermission("relations.command.list")) {
-                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-permission")));
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-permission", player)));
                     return true;
                 }
                 showList(player);
                 break;
             case "request":
                 if (!player.hasPermission("relations.command.request")) {
-                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-permission")));
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-permission", player)));
                     return true;
                 }
                 if (args.length < 3) {
-                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("usage.request")));
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("usage.request", player)));
                     return true;
                 }
                 Player target = Bukkit.getPlayer(args[1]);
                 if (target == null) {
-                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("player-not-found")));
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("player-not-found", player)));
                     return true;
                 }
                 String type = args[2].toLowerCase();
                 if (!plugin.getConfigManager().getRelationTypes().contains(type)) {
-                     player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("invalid-relation-type")));
+                     player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("invalid-relation-type", player)));
                      return true;
                 }
                 relationManager.sendRequest(player, target, type);
                 break;
             case "accept":
                 if (!player.hasPermission("relations.command.accept")) {
-                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-permission")));
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-permission", player)));
                     return true;
                 }
                 if (args.length < 2) {
-                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("usage.accept")));
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("usage.accept", player)));
                     return true;
                 }
                 Player accTarget = Bukkit.getPlayer(args[1]);
                 if (accTarget == null) {
-                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("player-not-found")));
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("player-not-found", player)));
                     return true;
                 }
                 relationManager.acceptRequest(player, accTarget);
                 break;
             case "deny":
                 if (!player.hasPermission("relations.command.deny")) {
-                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-permission")));
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-permission", player)));
                     return true;
                 }
                 if (args.length < 2) {
-                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("usage.deny")));
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("usage.deny", player)));
                     return true;
                 }
                 Player denyTarget = Bukkit.getPlayer(args[1]);
                 if (denyTarget == null) {
-                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("player-not-found")));
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("player-not-found", player)));
                     return true;
                 }
                 relationManager.denyRequest(player, denyTarget);
                 break;
             case "remove":
                 if (!player.hasPermission("relations.command.remove")) {
-                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-permission")));
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-permission", player)));
                     return true;
                 }
                  if (args.length < 2) {
-                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("usage.remove")));
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("usage.remove", player)));
                     return true;
                 }
                 // Need to find offline player if needed, but for now online
                 Player remTarget = Bukkit.getPlayer(args[1]);
                 if (remTarget == null) {
                      // Try offline? UUID fetch? Simplified for now
-                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("player-not-found")));
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("player-not-found", player)));
                     return true;
                 }
                 relationManager.removeRelation(player.getUniqueId(), remTarget.getUniqueId());
-                player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("relation.removed").replace("<target>", remTarget.getName())));
+                player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("relation.removed", player).replace("<target>", remTarget.getName())));
                 break;
             case "gender":
                 if (!player.hasPermission("relations.command.gender")) {
-                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-permission")));
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-permission", player)));
                     return true;
                 }
                 handleGender(player, args);
                 break;
             case "top":
                 if (!player.hasPermission("relations.command.top")) {
-                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-permission")));
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-permission", player)));
                     return true;
                 }
                 handleTop(player, args);
                 break;
             case "marry":
                 if (!player.hasPermission("relations.command.marry")) {
-                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-permission")));
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-permission", player)));
                     return true;
                 }
                 handleMarry(player, args);
                 break;
             case "save":
                 if (!player.hasPermission("relations.admin.save")) {
-                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-permission")));
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-permission", player)));
                     return true;
                 }
                 handleSave(player, args);
                 break;
             case "reload":
                 if (!player.hasPermission("relations.admin")) {
-                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-permission")));
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-permission", player)));
                     return true;
                 }
                 plugin.getGuiManager().closeAllMenus();
                 plugin.getConfigManager().reload();
                 plugin.getAffinityItemManager().loadItems();
-                player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("reload-success")));
+                player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("reload-success", player)));
+                break;
+            case "lang":
+                // New command to set player language manually if locale detection fails or player wants to override
+                // Usage: /rel lang <lang_code>
+                // We need to implement a per-player language preference store if we want this persistent.
+                // For now, let's assume auto-detect only, or add this later.
+                // The requirement was "automatically select language based on client", which is implemented.
+                // Skipping manual override command for now unless requested.
                 break;
             case "admin":
                  // Permission check handled in top-level check for admin arg
                  // But for safety if accessed differently (not possible with current structure but good practice)
                  if (!player.hasPermission("relations.admin")) {
-                     player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-permission")));
+                     player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-permission", player)));
                      return true;
                  }
                  handleAdmin(player, args);
                  break;
             case "debug":
                 if (!player.hasPermission("relations.admin")) {
-                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-permission")));
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-permission", player)));
                     return true;
                 }
                 handleDebug(player, args);
                 break;
             default:
-                player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("unknown-command")));
+                player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("unknown-command", player)));
         }
 
         return true;
@@ -202,12 +210,12 @@ public class RelationsCommand implements CommandExecutor, TabCompleter {
 
     private void handleSave(Player player, String[] args) {
         if (args.length < 2) {
-            player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("usage.save")));
+            player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("usage.save", player)));
             return;
         }
         String type = args[1].toLowerCase();
         if (!plugin.getConfigManager().getRelationTypes().contains(type)) {
-            player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("invalid-relation-type")));
+            player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("invalid-relation-type", player)));
             return;
         }
         
@@ -216,26 +224,26 @@ public class RelationsCommand implements CommandExecutor, TabCompleter {
             try {
                 amount = Integer.parseInt(args[2]);
             } catch (NumberFormatException e) {
-                player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("invalid-amount")));
+                player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("invalid-amount", player)));
                 return;
             }
         }
         
         ItemStack item = player.getInventory().getItemInMainHand();
         if (item == null || item.getType() == Material.AIR) {
-            player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("must-hold-item")));
+            player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("must-hold-item", player)));
             return;
         }
         
         plugin.getAffinityItemManager().saveItem(type, amount, item);
-        player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("item-saved")
+        player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("item-saved", player)
                 .replace("<type>", type)
                 .replace("<amount>", String.valueOf(amount))));
     }
 
     private void handleGender(Player player, String[] args) {
         if (args.length < 2) {
-            player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("usage.gender")));
+            player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("usage.gender", player)));
             return;
         }
         String genderInput = args[1].toLowerCase();
@@ -244,38 +252,38 @@ public class RelationsCommand implements CommandExecutor, TabCompleter {
         else if (genderInput.equals("female")) gender = "FEMALE";
         else if (genderInput.equals("other")) gender = "OTHER";
         else {
-             player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("invalid-gender")));
+             player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("invalid-gender", player)));
              return;
         }
         
         plugin.getPlayerManager().setGender(player.getUniqueId(), gender);
-        String msg = plugin.getConfigManager().getMessage("gender-set").replace("<gender>", gender);
+        String msg = plugin.getConfigManager().getMessage("gender-set", player).replace("<gender>", gender);
         player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
     }
 
     private void showHelp(Player player) {
-        player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("help.header")));
-        player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("help.gui")));
-        player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("help.gender")));
-        player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("help.top")));
-        player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("help.request")));
-        player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("help.accept")));
-        player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("help.deny")));
-        player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("help.remove")));
-        player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("help.marry")));
+        player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("help.header", player)));
+        player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("help.gui", player)));
+        player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("help.gender", player)));
+        player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("help.top", player)));
+        player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("help.request", player)));
+        player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("help.accept", player)));
+        player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("help.deny", player)));
+        player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("help.remove", player)));
+        player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("help.marry", player)));
         if (player.hasPermission("relations.admin.save")) {
-            player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("help.save")));
+            player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("help.save", player)));
         }
     }
 
     private void showList(Player player) {
         List<Relation> relations = relationManager.getRelations(player.getUniqueId());
-        player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("list-header")));
+        player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("list-header", player)));
         for (Relation r : relations) {
             UUID partnerId = r.getPartner(player.getUniqueId());
             String partnerName = Bukkit.getOfflinePlayer(partnerId).getName();
             String display = plugin.getConfigManager().getRelationDisplay(r.getType());
-            player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("relation.list-entry")
+            player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("relation.list-entry", player)
                     .replace("<display>", display)
                     .replace("<partner>", partnerName != null ? partnerName : "Unknown")
                     .replace("<affinity>", String.valueOf(r.getAffinity()))));
@@ -284,12 +292,12 @@ public class RelationsCommand implements CommandExecutor, TabCompleter {
 
     private void handleTop(Player player, String[] args) {
         if (args.length < 2) {
-            player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("usage.top")));
+            player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("usage.top", player)));
             return;
         }
         String type = args[1].toLowerCase();
         if (!plugin.getConfigManager().getRelationTypes().contains(type)) {
-            player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("invalid-relation-type")));
+            player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("invalid-relation-type", player)));
             return;
         }
 
@@ -298,13 +306,13 @@ public class RelationsCommand implements CommandExecutor, TabCompleter {
                 List<Relation> topRelations = plugin.getRelationManager().getTopRelations(type, 10);
                 if (topRelations.isEmpty()) {
                     SchedulerUtils.runTask(plugin, player, () -> {
-                        player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-relations-found")));
+                        player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-relations-found", player)));
                     });
                     return;
                 }
                 
                 SchedulerUtils.runTask(plugin, player, () -> {
-                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("top-header").replace("<type>", plugin.getConfigManager().getRelationDisplay(type))));
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("top-header", player).replace("<type>", plugin.getConfigManager().getRelationDisplay(type))));
                     int rank = 1;
                     for (Relation r : topRelations) {
                         String p1Name = Bukkit.getOfflinePlayer(r.getPlayer1()).getName();
@@ -312,7 +320,7 @@ public class RelationsCommand implements CommandExecutor, TabCompleter {
                         if (p1Name == null) p1Name = "Unknown";
                         if (p2Name == null) p2Name = "Unknown";
     
-                        player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("top-entry")
+                        player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("top-entry", player)
                                 .replace("<rank>", String.valueOf(rank))
                                 .replace("<p1>", p1Name)
                                 .replace("<p2>", p2Name)
@@ -323,7 +331,7 @@ public class RelationsCommand implements CommandExecutor, TabCompleter {
             } catch (Exception e) {
                 e.printStackTrace();
                 SchedulerUtils.runTask(plugin, player, () -> {
-                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("error-fetching-list")));
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("error-fetching-list", player)));
                 });
             }
         });
@@ -331,81 +339,101 @@ public class RelationsCommand implements CommandExecutor, TabCompleter {
 
     private void handleMarry(Player player, String[] args) {
         if (args.length < 2) {
-             player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("usage.marry")));
+             player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("usage.marry", player)));
              return;
         }
         Relation marriage = relationManager.getMarriage(player.getUniqueId());
         if (marriage == null && !args[1].equalsIgnoreCase("list")) {
-            player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("not-married")));
+            player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("not-married", player)));
             return;
         }
         
         String sub = args[1].toLowerCase();
         switch (sub) {
             case "sethome":
+                if (!player.hasPermission("relations.command.marry.sethome")) {
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-permission", player)));
+                    return;
+                }
                 relationManager.setHome(player);
                 break;
             case "home":
+                if (!player.hasPermission("relations.command.marry.home")) {
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-permission", player)));
+                    return;
+                }
                 relationManager.teleportHome(player);
                 break;
             case "gift":
+                if (!player.hasPermission("relations.command.marry.gift")) {
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-permission", player)));
+                    return;
+                }
                 ItemStack item = player.getInventory().getItemInMainHand();
                 if (item == null || item.getType() == Material.AIR) {
-                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("must-hold-item")));
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("must-hold-item", player)));
                     return;
                 }
                 UUID partnerId = marriage.getPartner(player.getUniqueId());
                 Player partner = Bukkit.getPlayer(partnerId);
                 if (partner == null) {
-                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("partner-not-online")));
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("partner-not-online", player)));
                     return;
                 }
                 if (partner.getInventory().firstEmpty() == -1) {
-                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("partner-inventory-full")));
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("partner-inventory-full", player)));
                     return;
                 }
                 partner.getInventory().addItem(item.clone());
                 player.getInventory().setItemInMainHand(null);
-                player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("marriage.gift-sent").replace("<target>", partner.getName())));
-                partner.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("marriage.gift-received").replace("<target>", player.getName())));
+                player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("marriage.gift-sent", player).replace("<target>", partner.getName())));
+                partner.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("marriage.gift-received", partner).replace("<target>", player.getName())));
                 break;
             case "tp":
+                if (!player.hasPermission("relations.command.marry.tp")) {
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-permission", player)));
+                    return;
+                }
                 UUID pid = marriage.getPartner(player.getUniqueId());
                 Player p = Bukkit.getPlayer(pid);
                 if (p == null) {
-                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("partner-not-online")));
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("partner-not-online", player)));
                     return;
                 }
-                player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("marriage.teleporting")));
+                player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("marriage.teleporting", player)));
                 SchedulerUtils.teleport(player, p.getLocation()).thenAccept(success -> {
                     if (!success) {
-                         player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("teleport-failed") != null ? plugin.getConfigManager().getMessage("teleport-failed") : "<red>Teleportation failed!"));
+                         player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("teleport-failed", player) != null ? plugin.getConfigManager().getMessage("teleport-failed", player) : "<red>Teleportation failed!"));
                     }
                 });
                 break;
             case "list":
+                if (!player.hasPermission("relations.command.marry.list")) {
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-permission", player)));
+                    return;
+                }
                 SchedulerUtils.runAsync(plugin, () -> {
                    try {
                        List<Relation> marriages = plugin.getRelationManager().getGlobalMarriages();
                        if (marriages.isEmpty()) {
-                           player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-marriages-found")));
+                           player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-marriages-found", player)));
                            return;
                        }
-                       player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("marriage-list-header")));
+                       player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("marriage-list-header", player)));
                        for (Relation r : marriages) {
                            String p1Name = Bukkit.getOfflinePlayer(r.getPlayer1()).getName();
                            String p2Name = Bukkit.getOfflinePlayer(r.getPlayer2()).getName();
                            if (p1Name == null) p1Name = "Unknown";
                            if (p2Name == null) p2Name = "Unknown";
                            
-                           player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("marriage-entry")
+                           player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("marriage-entry", player)
                                    .replace("<p1>", p1Name)
                                    .replace("<p2>", p2Name)
                                    .replace("<date>", r.getCreatedAt().toString())));
                        }
                    } catch (Exception e) {
                        e.printStackTrace();
-                       player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("error-fetching-list")));
+                       player.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("error-fetching-list", player)));
                    }
                 });
                 break;
@@ -413,6 +441,9 @@ public class RelationsCommand implements CommandExecutor, TabCompleter {
     }
     
     private void handleAdmin(CommandSender sender, String[] args) {
+        // Admin commands usually use default language or sender language if sender is player
+        Player adminPlayer = (sender instanceof Player) ? (Player) sender : null;
+        
         if (args.length < 2) return;
         String sub = args[1].toLowerCase();
         
@@ -421,18 +452,18 @@ public class RelationsCommand implements CommandExecutor, TabCompleter {
             plugin.getGuiManager().closeAllMenus();
             plugin.getConfigManager().reload();
             plugin.getAffinityItemManager().loadItems();
-            sender.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("reload-success")));
+            sender.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("reload-success", adminPlayer)));
         } else if (sub.equals("affinity")) {
              // affinity <add/set/remove> <p1> [p2] <type> <amt>
              if (args.length < 6) {
-                 sender.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("usage.admin-affinity")));
+                 sender.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("usage.admin-affinity", adminPlayer)));
                  return;
              }
              String action = args[2];
              Player p1 = Bukkit.getPlayer(args[3]);
              
              if (p1 == null) {
-                 sender.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("player-not-found")));
+                 sender.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("player-not-found", adminPlayer)));
                  return;
              }
              
@@ -452,7 +483,7 @@ public class RelationsCommand implements CommandExecutor, TabCompleter {
                  try {
                      amount = Integer.parseInt(args[5]);
                  } catch (NumberFormatException e) {
-                     sender.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("invalid-amount")));
+                     sender.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("invalid-amount", adminPlayer)));
                      return;
                  }
                  
@@ -462,10 +493,10 @@ public class RelationsCommand implements CommandExecutor, TabCompleter {
                  List<Relation> matches = rels.stream().filter(r -> r.getType().equalsIgnoreCase(finalType)).toList();
                  
                  if (matches.isEmpty()) {
-                     sender.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-relation-found")));
+                     sender.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-relation-found", adminPlayer)));
                      return;
                  } else if (matches.size() > 1) {
-                     sender.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("multiple-relations").replace("<type>", type)));
+                     sender.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("multiple-relations", adminPlayer).replace("<type>", type)));
                      return;
                  } else {
                      UUID partnerId = matches.get(0).getPartner(p1.getUniqueId());
@@ -484,14 +515,14 @@ public class RelationsCommand implements CommandExecutor, TabCompleter {
                  // Explicit p2
                  p2 = Bukkit.getPlayer(args[4]);
                  if (p2 == null) {
-                      sender.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("player-not-found")));
+                      sender.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("player-not-found", adminPlayer)));
                       return;
                  }
                  type = args[5];
                  try {
                      amount = Integer.parseInt(args[6]);
                  } catch (NumberFormatException e) {
-                     sender.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("invalid-amount")));
+                     sender.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("invalid-amount", adminPlayer)));
                      return;
                  }
                  
@@ -502,11 +533,12 @@ public class RelationsCommand implements CommandExecutor, TabCompleter {
     }
     
     private void updateAffinity(CommandSender admin, String action, UUID p1, UUID p2, String type, int amount, String p2Name) {
+         Player adminPlayer = (admin instanceof Player) ? (Player) admin : null;
          List<Relation> rels = relationManager.getRelations(p1);
          Relation r = rels.stream().filter(rel -> rel.getPartner(p1).equals(p2) && rel.getType().equalsIgnoreCase(type)).findFirst().orElse(null);
          
          if (r == null) {
-             admin.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-relation-found")));
+             admin.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("no-relation-found", adminPlayer)));
              return;
          }
          
@@ -517,7 +549,7 @@ public class RelationsCommand implements CommandExecutor, TabCompleter {
          
          // Admin bypasses limit, so we pass true for bypassLimit
          int actualAffinity = relationManager.setAffinity(p1, p2, type, newAff, true);
-         admin.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("relation.affinity-update")
+         admin.sendMessage(MiniMessage.miniMessage().deserialize(plugin.getConfigManager().getMessage("relation.affinity-update", adminPlayer)
                  .replace("<target>", p2Name != null ? p2Name : "Unknown")
                  .replace("<amount>", String.valueOf(actualAffinity))));
     }
@@ -590,11 +622,11 @@ public class RelationsCommand implements CommandExecutor, TabCompleter {
                 return null; // Player list
             }
             if (args[0].equalsIgnoreCase("marry")) {
-                completions.add("sethome");
-                completions.add("home");
-                completions.add("gift");
-                completions.add("tp");
-                completions.add("list");
+                if (sender.hasPermission("relations.command.marry.sethome")) completions.add("sethome");
+                if (sender.hasPermission("relations.command.marry.home")) completions.add("home");
+                if (sender.hasPermission("relations.command.marry.gift")) completions.add("gift");
+                if (sender.hasPermission("relations.command.marry.tp")) completions.add("tp");
+                if (sender.hasPermission("relations.command.marry.list")) completions.add("list");
             }
             if (args[0].equalsIgnoreCase("admin")) {
                 completions.add("reload");

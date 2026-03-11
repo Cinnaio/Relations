@@ -18,6 +18,10 @@ public class ConfigManager {
     private java.io.File menuFile;
     private java.io.File quickMenuFile;
     
+    // Multi-language support
+    private final java.util.Map<String, FileConfiguration> langConfigs = new java.util.HashMap<>();
+    private String defaultLang;
+
     private static final Pattern HEX_PATTERN_AMP = Pattern.compile("&#([0-9a-fA-F]{6})");
     private static final Pattern HEX_PATTERN_BRACE = Pattern.compile("\\{#([0-9a-fA-F]{6})\\}");
     private static final Pattern LEGACY_PATTERN = Pattern.compile("&([0-9a-fA-Fk-oK-OrR])");
@@ -29,8 +33,36 @@ public class ConfigManager {
         
         loadMenuConfig();
         loadQuickMenuConfig();
+        loadLangConfigs();
     }
     
+    private void loadLangConfigs() {
+        this.langConfigs.clear();
+        this.defaultLang = config.getString("settings.default-lang", "zh_cn");
+        
+        java.io.File langFolder = new java.io.File(plugin.getDataFolder(), "lang");
+        if (!langFolder.exists()) {
+            langFolder.mkdirs();
+            // Save default lang resource if folder created
+            plugin.saveResource("lang/zh_cn.yml", false);
+        }
+        
+        java.io.File[] files = langFolder.listFiles((dir, name) -> name.endsWith(".yml"));
+        if (files != null) {
+            for (java.io.File file : files) {
+                String langName = file.getName().replace(".yml", "").toLowerCase();
+                this.langConfigs.put(langName, org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(file));
+                plugin.getLogger().info("Loaded language: " + langName);
+            }
+        }
+        
+        if (langConfigs.isEmpty()) {
+            plugin.getLogger().warning("No language files found! Creating default zh_cn.yml");
+            plugin.saveResource("lang/zh_cn.yml", false);
+            loadLangConfigs(); // Reload
+        }
+    }
+
     private void loadMenuConfig() {
         this.menuFile = new java.io.File(plugin.getDataFolder(), "menu.yml");
         if (!menuFile.exists()) {
@@ -52,6 +84,7 @@ public class ConfigManager {
         config = plugin.getConfig();
         loadMenuConfig();
         loadQuickMenuConfig();
+        loadLangConfigs();
         if (plugin.getLevelManager() != null) {
             plugin.getLevelManager().loadLevels();
         }
@@ -127,11 +160,53 @@ public class ConfigManager {
     }
 
     public String getMessage(String path) {
-        return processColorCodes(config.getString("messages." + path, ""));
+        return getMessage(path, null);
+    }
+    
+    public String getMessage(String path, org.bukkit.entity.Player player) {
+        String lang = defaultLang;
+        if (player != null) {
+            try {
+                lang = player.getLocale().toLowerCase();
+            } catch (Exception e) {}
+        }
+        
+        FileConfiguration langConfig = langConfigs.get(lang);
+        if (langConfig == null && lang.contains("_")) {
+             langConfig = langConfigs.get(lang.split("_")[0]);
+        }
+        
+        if (langConfig == null) {
+            langConfig = langConfigs.get(defaultLang);
+        }
+        
+        // If still null (default lang file missing), try any loaded lang or return error
+        if (langConfig == null && !langConfigs.isEmpty()) {
+            langConfig = langConfigs.values().iterator().next();
+        }
+        
+        if (langConfig == null) {
+            return "Missing language file for " + path;
+        }
+
+        String msg = langConfig.getString(path);
+        if (msg == null) {
+             // Fallback to default lang
+             FileConfiguration defConfig = langConfigs.get(defaultLang);
+             if (defConfig != null) {
+                 msg = defConfig.getString(path);
+             }
+        }
+        
+        if (msg == null) return "Missing message: " + path;
+        
+        String prefix = langConfig.getString("prefix", "");
+        return processColorCodes(prefix + msg);
     }
     
     public String getPrefix() {
-        return processColorCodes(config.getString("messages.prefix", ""));
+        // Deprecated usage, prefix is now auto-prepended in getMessage
+        return ""; 
     }
     
     public String processColorCodes(String message) {
